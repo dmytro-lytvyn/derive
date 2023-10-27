@@ -9,6 +9,17 @@ import TopPanel from "components/UI/TopPanel";
 import Label from "components/UI/Label";
 import Input from "components/UI/Input";
 import Button from "components/UI/Button";
+//Kafka
+import { Kafka } from "@upstash/kafka"
+
+//Kafka
+const kafka = new Kafka({
+  url: process.env.EXPO_PUBLIC_KAFKA_URL,
+  username: process.env.EXPO_PUBLIC_KAFKA_USERNAME,
+  password: process.env.EXPO_PUBLIC_KAFKA_PASSWORD,
+})
+const producer = kafka.producer()
+const consumer = kafka.consumer()
 
 const ExpenseScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
   const [sum, setSum] = useState<string>("");
@@ -35,6 +46,34 @@ const ExpenseScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
           );
         }
       );
+      //Kafka
+      console.log('Before produce');
+      const message = {cardId: route.params.cardId, amount: sum, date: `${new Date().getTime()}`, type: expenseTypeID, actionType: "expense"}
+      const res = await producer.produce("transactions", message, {
+        partition: 0,
+        //timestamp: 4567,
+        key: route.params.cardId,
+        //headers: [{ key: "TRACE-ID", value: "32h67jk" }],
+      });
+      console.log(res);
+      console.log('After produce');
+      const messages = await consumer.consume({
+        consumerGroupId: "my_consumer_group",
+        instanceId: "my_consumer_instance",
+        topics: ["transactions"],
+        autoOffsetReset: "earliest",
+      });
+      /*const messages = await consumer.fetch({
+        topic: "transactions",
+        partition: 0,
+        offset: 12,
+        timeout: 1000,
+      });*/
+      console.log('After consume');
+      for (let m of messages) {
+        console.log(m);
+      }
+      console.log('After messages');
     });
   }
 
