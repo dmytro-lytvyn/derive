@@ -10,7 +10,9 @@ import Label from "components/UI/Label";
 import Input from "components/UI/Input";
 import Button from "components/UI/Button";
 //Kafka
-import { Kafka } from "@upstash/kafka"
+import { Kafka } from "@upstash/kafka";
+import * as FileSystem from 'expo-file-system';
+//import { StorageAccessFramework } from 'expo-file-system';
 
 //Kafka
 const kafka = new Kafka({
@@ -47,6 +49,42 @@ const ExpenseScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
         }
       );
       //Kafka
+      console.log('Before setExternalDirectory');
+      // Requests permissions for external directory
+      const { StorageAccessFramework } = FileSystem;
+      
+      var uri = 'content://com.android.externalstorage.documents/tree/primary%3ASync%2FDerive';
+      var files = await StorageAccessFramework.readDirectoryAsync(uri)
+          .then((files) => {
+            console.log(`Files inside ${uri}:\n${JSON.stringify(files)}`);
+            const data_string = FileSystem.readAsStringAsync(files[0], {encoding: FileSystem.EncodingType.UTF8});
+            console.log(`Loaded ${data_string.length} bytes`);
+            console.log(data_string);
+          })
+          .catch((error) => {
+            console.log(error);
+            StorageAccessFramework.requestDirectoryPermissionsAsync(uri); 
+          });
+      /*
+      console.log(`Files inside ${uri}:\n${JSON.stringify(files)}`);
+      const data_string = await FileSystem.readAsStringAsync(files[0], {encoding: FileSystem.EncodingType.UTF8});
+      console.log(`Loaded ${data_string.length} bytes`);
+      console.log(data_string);
+      */
+      
+      
+
+      /*
+      const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync(uri);
+      if (permissions.granted) {
+        // Gets SAF URI from response
+        const uri = permissions.directoryUri;
+
+        // Gets all files inside of selected directory
+        const files = await StorageAccessFramework.readDirectoryAsync(uri);
+        console.log(`Files inside ${uri}:\n${JSON.stringify(files)}`);
+      }
+      */
       console.log('Before produce');
       const message = {cardId: route.params.cardId, amount: sum, date: `${new Date().getTime()}`, type: expenseTypeID, actionType: "expense"}
       const res = await producer.produce("transactions", message, {

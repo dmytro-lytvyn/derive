@@ -8,6 +8,8 @@ import AppConstants from "styles/constants";
 import Button from "components/UI/Button";
 import Logo from "components/UI/Logo";
 import TopPanel from "components/UI/TopPanel";
+//import * as FileSystem from 'expo-file-system';
+//import { StorageAccessFramework } from 'expo-file-system';
 
 const StartScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -21,6 +23,28 @@ const StartScreen: FunctionComponent<IScreen> = ({ navigation }) => {
       initializeTables(transaction);
       transaction.executeSql("SELECT * FROM cards", [], (transaction: SQLTransaction, result: SQLResultSet) => {
         if (result.rows.length) {
+          /*
+          console.log('Before setExternalDirectory');
+          // Requests permissions for external directory
+          //const { StorageAccessFramework } = FileSystem;
+
+          //const files1 = await StorageAccessFramework.readDirectoryAsync(uri);
+          //alert(`Files inside ${uri}:\n\n${JSON.stringify(files1)}`);
+          
+          const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
+          if (permissions.granted) {
+            // Gets SAF URI from response
+            const uri = permissions.directoryUri;
+
+            // Gets all files inside of selected directory
+            const files = await StorageAccessFramework.readDirectoryAsync(uri);
+            console.log(uri);
+            alert(`Files inside ${uri}:\n\n${JSON.stringify(files)}`);
+          }
+          const externalDirectory = FileSystem.documentDirectory;
+          console.log(externalDirectory);
+          console.log('After dir');
+          */
           navigation.push("Home");
         } else {
           setIsLoading(false);
