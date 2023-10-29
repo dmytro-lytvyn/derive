@@ -14,12 +14,33 @@ const ExpenseScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
   const [sum, setSum] = useState<string>("");
   const [expenseTypeID, setExpenseTypeID] = useState<number>(returnConfigurationData().ExpenseTypes[0].id);
 
+  async function saveSyncFile(updatedAt: String, entityType: String, entityId: String, origin: String, sql: String): void {
+    var fileName = `${updatedAt}+${entityType}+${entityId}+${origin}.sql`;
+    console.log(fileName);
+    // Get saved path
+    var uri = 'content://com.android.externalstorage.documents/tree/primary%3ASync%2FDerive';
+    var fileUri = await StorageAccessFramework.createFileAsync(uri, fileName, 'application/x-sql');
+    console.log(fileUri);
+    await FileSystem.writeAsStringAsync(fileUri, sql, {encoding: FileSystem.EncodingType.UTF8})
+    console.log('After writeAsStringAsync');
+  }
+
   function onCreateTransactionPressHandler(): void {
     Database.transaction(async (transaction: SQLTransaction) => {
+      var updatedAt = `${new Date().getTime()}`;
+      var valuesTemplate = '?, ?, ?, ?, ?'
+      var valuesArray = [route.params.cardId, sum, updatedAt, expenseTypeID, "expense"]
+      var valuesString = "'" + valuesArray.join("','") + "'"; // JSON.stringify(valuesArray)
+      var sql = 'INSERT INTO transactions (cardId, amount, date, type, actionType) VALUES ({values});'
+      // Insert a new transaction
       await transaction.executeSql(
-        "INSERT INTO transactions (cardId, amount, date, type, actionType) VALUES (?, ?, ?, ?, ?);",
-        [route.params.cardId, sum, `${new Date().getTime()}`, expenseTypeID, "expense"]
+        sql.replace('{values}', valuesTemplate),
+        valuesArray
       );
+      console.log(sql.replace('{values}', valuesString));
+      // Save SQL into file
+      saveSyncFile(updatedAt, 'transactions', route.params.cardId, 'debug', sql.replace('{values}', valuesString));
+      // Update card balance
       await transaction.executeSql(
         "SELECT * FROM cards WHERE id = ?",
         [route.params.cardId],

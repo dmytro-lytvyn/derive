@@ -8,11 +8,57 @@ import AppConstants from "styles/constants";
 import Button from "components/UI/Button";
 import Logo from "components/UI/Logo";
 import TopPanel from "components/UI/TopPanel";
+// File System
+import * as FileSystem from 'expo-file-system';
+import { StorageAccessFramework } from 'expo-file-system';
 
 const StartScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  async function requestSyncDirectoryPermissions(uri: String): void {
+    // If we have no permissions, request them
+    console.log('Before requestDirectoryPermissionsAsync');
+    const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync(uri);
+    console.log('After requestDirectoryPermissionsAsync');
+    if (permissions.granted) {
+      const uri = permissions.directoryUri;
+      console.log(uri);
+      // Save chosen URI path
+    } else {
+      console.log('Permission not granted!');
+      requestSyncDirectoryPermissions(uri);
+    };
+  }
+
+  async function checkSyncDirectoryPermissions(): void {
+    // Requests permissions for external directory
+    //const { StorageAccessFramework } = FileSystem;
+
+    // Get saved path
+    var uri = 'content://com.android.externalstorage.documents/tree/primary%3ASync%2FDerive';
+    // Check if we have permissions to the path
+    var files = await StorageAccessFramework.readDirectoryAsync(uri)
+        .catch((error) => {
+          console.log(error);
+          requestSyncDirectoryPermissions(uri);
+        });
+  }
+
+  async function listSyncDirectoryFiles(): void {
+    console.log('Before setExternalDirectory');
+    //const { StorageAccessFramework } = FileSystem;
+    
+    // Get saved path
+    var uri = 'content://com.android.externalstorage.documents/tree/primary%3ASync%2FDerive';
+    var files = await StorageAccessFramework.readDirectoryAsync(uri);
+    console.log(`Files inside ${uri}:\n${JSON.stringify(files)}`);
+    const data_string = await FileSystem.readAsStringAsync(files[0], {encoding: FileSystem.EncodingType.UTF8});
+    console.log(`Loaded ${data_string.length} bytes`);
+    console.log(data_string);
+  }
+
   function onLetsStartPressHandler(): void {
+    checkSyncDirectoryPermissions();
     navigation.push("AddCard");
   }
 
@@ -21,6 +67,7 @@ const StartScreen: FunctionComponent<IScreen> = ({ navigation }) => {
       initializeTables(transaction);
       transaction.executeSql("SELECT * FROM cards", [], (transaction: SQLTransaction, result: SQLResultSet) => {
         if (result.rows.length) {
+          listSyncDirectoryFiles();
           navigation.push("Home");
         } else {
           setIsLoading(false);
