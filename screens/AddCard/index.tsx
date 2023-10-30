@@ -11,7 +11,6 @@ import Input from "components/UI/Input";
 import Button from "components/UI/Button";
 import PaymentSystem from "components/UI/PaymentSystem";
 // Custom functions
-import updateSqlTemplate from "libs/updateSqlTemplate"
 import saveTransactionToFile from "libs/saveTransactionToFile"
 // UUID
 //import * as Crypto from 'expo-crypto';
@@ -21,7 +20,7 @@ import { v4 as uuidv4 } from 'uuid';
 const AddCardScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   const [paymentSystem, setPaymentSystem] = useState<IPaymentSystem>("Visa");
   const [skinID, setSkinID] = useState<number>(0);
-  const [initialSum, setInitialSum] = useState<string>("");
+  const [initialSum, setInitialSum] = useState<number>(0);
   const [cardNumber, setCardNumber] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
 
@@ -29,12 +28,11 @@ const AddCardScreen: FunctionComponent<IScreen> = ({ navigation }) => {
     Database.transaction(async (transaction: SQLTransaction) => {
       var id = uuidv4();
       var updatedAt = `${new Date().getTime()}`;
-      var valuesArray = [id, initialSum, paymentSystem, cardNumber, endDate, skinID]
-      var sqlTemplate = 'INSERT INTO cards (id, balance, paymentSystem, number, endDate, colorId) VALUES ({values});'
-      var sqlTemplateUpdated = await updateSqlTemplate(sqlTemplate, valuesArray);
+      var sqlTemplate = 'INSERT INTO cards (id, balance, paymentSystem, number, endDate, colorId) VALUES (?, ?, ?, ?, ?, ?);';
+      var valuesArray = [id, Number(initialSum), paymentSystem, cardNumber, endDate, skinID];
       // Insert a new card
       await transaction.executeSql(
-        sqlTemplateUpdated,
+        sqlTemplate,
         valuesArray
       );
       // Save SQL into file
@@ -45,7 +43,7 @@ const AddCardScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   }
 
   function validateData(): boolean {
-    if (initialSum !== "" && cardNumber.length === 19 && endDate.length === 10) {
+    if (Number(initialSum) !== 0 && cardNumber.length === 19 && endDate.length === 10) {
       return true;
     } else {
       return false;

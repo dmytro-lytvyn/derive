@@ -9,7 +9,6 @@ import Input from "components/UI/Input";
 import MultilineInput from "components/UI/MultilineInput";
 import Button from "components/UI/Button";
 // Custom functions
-import updateSqlTemplate from "libs/updateSqlTemplate"
 import saveTransactionToFile from "libs/saveTransactionToFile"
 // UUID
 //import * as Crypto from 'expo-crypto';
@@ -18,19 +17,18 @@ import { v4 as uuidv4 } from 'uuid';
 
 const AddGoalScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   const [goalName, setGoalName] = useState<string>("");
-  const [goalFinalAmount, setGoalFinalAmount] = useState<string>("");
+  const [goalFinalAmount, setGoalFinalAmount] = useState<number>(0);
   const [goalDescription, setGoalDescription] = useState<string>("");
 
   function onAddGoalPressHandler(): void {
     Database.transaction(async (transaction: SQLTransaction) => {
       var id = uuidv4();
       var updatedAt = `${new Date().getTime()}`;
-      var valuesArray = [id, goalName, goalDescription, goalFinalAmount, 0]
-      var sqlTemplate = 'INSERT INTO goals (id, name, description, finalAmount, currentAmount) VALUES ({values});'
-      var sqlTemplateUpdated = await updateSqlTemplate(sqlTemplate, valuesArray);
+      var sqlTemplate = 'INSERT INTO goals (id, name, description, finalAmount, currentAmount) VALUES (?, ?, ?, ?, ?);';
+      var valuesArray = [id, goalName, goalDescription, Number(goalFinalAmount), 0];
       // Insert a new goal
       await transaction.executeSql(
-        sqlTemplateUpdated,
+        sqlTemplate,
         valuesArray,
         () => {
           navigation.push("Home");

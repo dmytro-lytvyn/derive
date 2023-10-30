@@ -11,7 +11,6 @@ import Label from "components/UI/Label";
 import Button from "components/UI/Button";
 import Input from "components/UI/Input";
 // Custom functions
-import updateSqlTemplate from "libs/updateSqlTemplate"
 import saveTransactionToFile from "libs/saveTransactionToFile"
 // UUID
 //import * as Crypto from 'expo-crypto';
@@ -19,7 +18,7 @@ import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 
 const TransferScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
-  const [sum, setSum] = useState<string>("");
+  const [sum, setSum] = useState<number>(0);
   const [cards, setCards] = useState<ICard[]>([]);
   const [selectedCard, setSelectedCard] = useState<ICard>();
   const [isOpenChooseCardScreen, setIsOpenChooseCardScreen] = useState<boolean>(false);
@@ -56,9 +55,8 @@ const TransferScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
         "SELECT * FROM cards WHERE id = ?",
         [route.params.cardId],
         async (t, result: SQLResultSet) => {
-          var valuesArray = [result.rows._array[0].balance - Number(sum), route.params.cardId]
-          var sqlTemplate = 'UPDATE cards SET balance = ? WHERE id = ?;'
-          var sqlTemplateUpdated = await updateSqlTemplate(sqlTemplate, valuesArray);
+          var sqlTemplate = 'UPDATE cards SET balance = ? WHERE id = ?;';
+          var valuesArray = [result.rows._array[0].balance - Number(sum), route.params.cardId];
 
           await transaction.executeSql(
             sqlTemplate,
@@ -75,9 +73,8 @@ const TransferScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
         "SELECT * FROM cards WHERE id = ?",
         [Number(selectedCard?.id)],
         async (t, result: SQLResultSet) => {
-          var valuesArray = [result.rows._array[0].balance + Number(sum), selectedCard?.id]
-          var sqlTemplate = 'UPDATE cards SET balance = ? WHERE id = ?;'
-          var sqlTemplateUpdated = await updateSqlTemplate(sqlTemplate, valuesArray);
+          var sqlTemplate = 'UPDATE cards SET balance = ? WHERE id = ?;';
+          var valuesArray = [result.rows._array[0].balance + Number(sum), selectedCard?.id];
 
           await transaction.executeSql(
             sqlTemplate,

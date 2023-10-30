@@ -1,3 +1,4 @@
+import replaceSqlTemplate  from "libs/replaceSqlTemplate"
 // Config
 import * as SecureStore from 'expo-secure-store';
 // File System
@@ -10,8 +11,7 @@ async function saveTransactionToFile(updatedAt: String, entityType: String, enti
   var originId = await SecureStore.getItemAsync('originId');
 
   // Format SQL command
-  var valuesString = "'" + valuesArray.join("','") + "'"; // JSON.stringify(valuesArray)
-  var sql = sqlTemplate.replace('{values}', valuesString);
+  var sqlTemplateReplaced = await replaceSqlTemplate(sqlTemplate, valuesArray);
 
   // Generate target file name
   var fileName = `${updatedAt}+${entityType}+${entityId}+${originId}.sql`;
@@ -19,7 +19,7 @@ async function saveTransactionToFile(updatedAt: String, entityType: String, enti
 
   // Create target sync file
   var fileUri = await StorageAccessFramework.createFileAsync(uri, fileName, 'application/x-sql');
-  await FileSystem.writeAsStringAsync(fileUri, sql, {encoding: FileSystem.EncodingType.UTF8});
+  await FileSystem.writeAsStringAsync(fileUri, sqlTemplateReplaced, {encoding: FileSystem.EncodingType.UTF8});
 }
 
 export default saveTransactionToFile;

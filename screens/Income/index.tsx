@@ -10,7 +10,6 @@ import Label from "components/UI/Label";
 import Input from "components/UI/Input";
 import Button from "components/UI/Button";
 // Custom functions
-import updateSqlTemplate from "libs/updateSqlTemplate"
 import saveTransactionToFile from "libs/saveTransactionToFile"
 // UUID
 //import * as Crypto from 'expo-crypto';
@@ -18,19 +17,18 @@ import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 
 const IncomeScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
-  const [sum, setSum] = useState<string>("");
+  const [sum, setSum] = useState<number>(0);
   const [incomeTypeID, setIncomeTypeID] = useState<number>(returnConfigurationData().IncomeTypes[0].id);
 
   function onCreateTransactionPressHandler(): void {
     Database.transaction(async (transaction: SQLTransaction) => {
       var id = uuidv4();
       var updatedAt = `${new Date().getTime()}`;
-      var valuesArray = [id, route.params.cardId, sum, updatedAt, incomeTypeID, "income"]
-      var sqlTemplate = 'INSERT INTO transactions (id, cardId, amount, date, type, actionType) VALUES ({values});'
-      var sqlTemplateUpdated = await updateSqlTemplate(sqlTemplate, valuesArray);
+      var sqlTemplate = 'INSERT INTO transactions (id, cardId, amount, date, type, actionType) VALUES (?, ?, ?, ?, ?, ?);';
+      var valuesArray = [id, route.params.cardId, Number(sum), updatedAt, incomeTypeID, "income"];
       // Insert a new transaction
       await transaction.executeSql(
-        sqlTemplateUpdated,
+        sqlTemplate,
         valuesArray
       );
       // Update card balance
