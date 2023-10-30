@@ -10,6 +10,8 @@ import Skin from "components/UI/Skin";
 import Input from "components/UI/Input";
 import Button from "components/UI/Button";
 import PaymentSystem from "components/UI/PaymentSystem";
+// Custom functions
+import saveTransactionToFile from "libs/saveTransactionToFile"
 
 const EditCardScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
   const [activePaymentSystem, setActivePaymentSystem] = useState<IPaymentSystem>("Visa");
@@ -19,28 +21,62 @@ const EditCardScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
 
   function onUpdateCardPressHandler(): void {
     Database.transaction((transaction: SQLTransaction) => {
-      transaction.executeSql("UPDATE cards SET number = ?, endDate = ?, paymentSystem = ?, colorId = ? WHERE id = ?", [
+      var updatedAt = `${new Date().getTime()}`;
+      var sqlTemplate = 'UPDATE cards SET number = ?, endDate = ?, paymentSystem = ?, colorId = ? WHERE id = ?;';
+      var valuesArray = [
         cardNumber,
         endDate,
         activePaymentSystem,
         activeSkin,
         route.params.id,
-      ]);
+      ];
+      // Update card
+      transaction.executeSql(
+        sqlTemplate,
+        valuesArray
+      );
+      // Save SQL into file
+      saveTransactionToFile(updatedAt, 'cards', route.params.id, sqlTemplate, valuesArray);
+      console.log('saveTransactionToFile done!');
     });
     navigation.push("Home");
   }
 
   function onRemoveCardPressHandler(): void {
     Database.transaction((transaction: SQLTransaction) => {
-      transaction.executeSql("DELETE FROM cards WHERE id = ?", [route.params.id]);
-      transaction.executeSql("DELETE FROM transactions WHERE cardId = ?", [route.params.id]);
-      transaction.executeSql("SELECT * FROM cards", [], (transaction: SQLTransaction, result: SQLResultSet) => {
-        if (result.rows.length) {
-          navigation.push("Home");
-        } else {
-          navigation.push("Start");
-        }
-      });
+      var updatedAt = `${new Date().getTime()}`;
+      var valuesArray = [route.params.id];
+
+      var sqlTemplate = 'DELETE FROM transactions WHERE cardId = ?;';
+      // Delete transactions
+      transaction.executeSql(
+        sqlTemplate,
+        valuesArray
+      );
+      // Save SQL into file
+      saveTransactionToFile(updatedAt, 'transactions', route.params.id, sqlTemplate, valuesArray);
+      console.log('Delete transactions done!');
+
+      var sqlTemplate = 'DELETE FROM cards WHERE id = ?;';
+      // Delete card
+      transaction.executeSql(
+        sqlTemplate,
+        valuesArray
+      );
+      // Save SQL into file
+      saveTransactionToFile(updatedAt, 'cards', route.params.id, sqlTemplate, valuesArray);
+      console.log('Delete card done!');
+
+      transaction.executeSql(
+        "SELECT * FROM cards",
+        [],
+        (t: SQLTransaction, result: SQLResultSet) => {
+          if (result.rows.length) {
+            navigation.push("Home");
+          } else {
+            navigation.push("Start");
+          }
+        });
     });
   }
 

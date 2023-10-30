@@ -65,9 +65,11 @@ const StartScreen: FunctionComponent<IScreen> = ({ navigation }) => {
     var uri = await getSyncPathOrRequestPermissions();
     var files = await StorageAccessFramework.readDirectoryAsync(uri);
     console.log(`Files inside ${uri}:\n${JSON.stringify(files)}`);
-    const data_string = await FileSystem.readAsStringAsync(files[0], {encoding: FileSystem.EncodingType.UTF8});
-    console.log(`Loaded ${data_string.length} bytes`);
-    console.log(data_string);
+    if (files.length) {
+      const data_string = await FileSystem.readAsStringAsync(files[0], {encoding: FileSystem.EncodingType.UTF8});
+      console.log(`Loaded ${data_string.length} bytes`);
+      console.log(data_string);
+    }
   }
 
   function onLetsStartPressHandler(): void {
@@ -80,14 +82,18 @@ const StartScreen: FunctionComponent<IScreen> = ({ navigation }) => {
 
     Database.transaction((transaction: SQLTransaction) => {
       initializeTables(transaction);
-      transaction.executeSql("SELECT * FROM cards", [], (transaction: SQLTransaction, result: SQLResultSet) => {
-        if (result.rows.length) {
-          listSyncDirectoryFiles();
-          navigation.push("Home");
-        } else {
-          setIsLoading(false);
+      transaction.executeSql(
+        "SELECT * FROM cards",
+        [],
+        (transaction: SQLTransaction, result: SQLResultSet) => {
+          if (result.rows.length) {
+            listSyncDirectoryFiles();
+            navigation.push("Home");
+          } else {
+            setIsLoading(false);
+          }
         }
-      });
+      );
     });
   }, []);
 

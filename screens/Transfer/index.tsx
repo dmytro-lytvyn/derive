@@ -48,36 +48,36 @@ const TransferScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
 
   function onTransferConfirmHandler(): void {
     var updatedAt = `${new Date().getTime()}`;
+    var sqlSelectTemplate = 'SELECT * FROM cards WHERE id = ?;';
+    var sqlUpdateTemplate = 'UPDATE cards SET balance = ? WHERE id = ?;';
 
-    Database.transaction(async (transaction: SQLTransaction) => {
+    Database.transaction((transaction: SQLTransaction) => {
       // From card
-      await transaction.executeSql(
-        "SELECT * FROM cards WHERE id = ?",
+      transaction.executeSql(
+        sqlSelectTemplate,
         [route.params.cardId],
-        async (t, result: SQLResultSet) => {
-          var sqlTemplate = 'UPDATE cards SET balance = ? WHERE id = ?;';
-          var valuesArray = [result.rows._array[0].balance - Number(sum), route.params.cardId];
+        (t, result: SQLResultSet) => {
+          var valuesArray = [Number(result.rows._array[0].balance) - Number(sum), route.params.cardId];
 
-          await transaction.executeSql(
-            sqlTemplate,
+          transaction.executeSql(
+            sqlUpdateTemplate,
             valuesArray
           );
           console.log('Update card 1 done!');
           // Save SQL into file
-          await saveTransactionToFile(updatedAt, 'cards', route.params.cardId, sqlTemplate, valuesArray);
-          console.log('saveTransactionToFile done!');
+          saveTransactionToFile(updatedAt, 'cards', String(route.params.cardId), sqlUpdateTemplate, valuesArray);
+          console.log('saveTransactionToFile 1 done!');
         });
 
       // To card
-      await transaction.executeSql(
-        "SELECT * FROM cards WHERE id = ?",
-        [Number(selectedCard?.id)],
-        async (t, result: SQLResultSet) => {
-          var sqlTemplate = 'UPDATE cards SET balance = ? WHERE id = ?;';
-          var valuesArray = [result.rows._array[0].balance + Number(sum), selectedCard?.id];
+      transaction.executeSql(
+        sqlSelectTemplate,
+        [selectedCard?.id],
+        (t, result: SQLResultSet) => {
+          var valuesArray = [Number(result.rows._array[0].balance) + Number(sum), selectedCard?.id];
 
-          await transaction.executeSql(
-            sqlTemplate,
+          transaction.executeSql(
+            sqlUpdateTemplate,
             valuesArray,
             () => {
               navigation.push("Card", {
@@ -87,8 +87,8 @@ const TransferScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
           );
           console.log('Update card 2 done!');
           // Save SQL into file
-          await saveTransactionToFile(updatedAt, 'cards', selectedCard?.id, sqlTemplate, valuesArray);
-          console.log('saveTransactionToFile done!');
+          saveTransactionToFile(updatedAt, 'cards', String(selectedCard?.id), sqlUpdateTemplate, valuesArray);
+          console.log('saveTransactionToFile 2 done!');
         }
       );
     });

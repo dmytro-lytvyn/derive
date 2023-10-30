@@ -9,6 +9,8 @@ import TopPanel from "components/UI/TopPanel";
 import Label from "components/UI/Label";
 import Input from "components/UI/Input";
 import Button from "components/UI/Button";
+// Custom functions
+import saveTransactionToFile from "libs/saveTransactionToFile"
 
 const GoalScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
   const [goal, setGoal] = useState<IGoal>();
@@ -34,21 +36,39 @@ const GoalScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
     const newAmount = currentAmount + Number(amountToAdd) + -Number(amountToWithdraw);
     const completeAmount = newAmount >= 0 ? newAmount : 0;
     Database.transaction((transaction: SQLTransaction) => {
+      var updatedAt = `${new Date().getTime()}`;
+      var sqlTemplate = 'UPDATE goals SET currentAmount = ? WHERE id = ?;';
+      var valuesArray = [completeAmount, route.params.id];
+      // Update goal
       transaction.executeSql(
-        "UPDATE goals SET currentAmount = ? WHERE id = ?",
-        [completeAmount, route.params.id],
+        sqlTemplate,
+        valuesArray,
         () => {
           navigation.push("Home");
         }
       );
+      // Save SQL into file
+      saveTransactionToFile(updatedAt, 'goals', route.params.id, sqlTemplate, valuesArray);
+      console.log('saveTransactionToFile done!');
     });
   }
 
   function onRemoveGoalPressHandler(): void {
     Database.transaction((transaction: SQLTransaction) => {
-      transaction.executeSql("DELETE FROM goals WHERE id = ?", [route.params.id], () => {
-        navigation.push("Home");
-      });
+      var updatedAt = `${new Date().getTime()}`;
+      var sqlTemplate = 'DELETE FROM goals WHERE id = ?;';
+      var valuesArray = [route.params.id];
+      // Delete goal
+      transaction.executeSql(
+        sqlTemplate,
+        valuesArray,
+        () => {
+          navigation.push("Home");
+        }
+      );
+      // Save SQL into file
+      saveTransactionToFile(updatedAt, 'goals', route.params.id, sqlTemplate, valuesArray);
+      console.log('saveTransactionToFile done!');
     });
   }
 

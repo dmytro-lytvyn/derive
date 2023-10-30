@@ -21,13 +21,13 @@ const AddGoalScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   const [goalDescription, setGoalDescription] = useState<string>("");
 
   function onAddGoalPressHandler(): void {
-    Database.transaction(async (transaction: SQLTransaction) => {
+    Database.transaction((transaction: SQLTransaction) => {
       var id = uuidv4();
       var updatedAt = `${new Date().getTime()}`;
       var sqlTemplate = 'INSERT INTO goals (id, name, description, finalAmount, currentAmount) VALUES (?, ?, ?, ?, ?);';
       var valuesArray = [id, goalName, goalDescription, Number(goalFinalAmount), 0];
       // Insert a new goal
-      await transaction.executeSql(
+      transaction.executeSql(
         sqlTemplate,
         valuesArray,
         () => {
@@ -35,7 +35,7 @@ const AddGoalScreen: FunctionComponent<IScreen> = ({ navigation }) => {
         }
       );
       // Save SQL into file
-      await saveTransactionToFile(updatedAt, 'goals', id, sqlTemplate, valuesArray);
+      saveTransactionToFile(updatedAt, 'goals', id, sqlTemplate, valuesArray);
       console.log('saveTransactionToFile done!');
     });
   }

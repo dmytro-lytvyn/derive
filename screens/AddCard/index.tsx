@@ -25,18 +25,18 @@ const AddCardScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   const [endDate, setEndDate] = useState<string>("");
 
   function onCreateCardPressHandler(): void {
-    Database.transaction(async (transaction: SQLTransaction) => {
+    Database.transaction((transaction: SQLTransaction) => {
       var id = uuidv4();
       var updatedAt = `${new Date().getTime()}`;
       var sqlTemplate = 'INSERT INTO cards (id, balance, paymentSystem, number, endDate, colorId) VALUES (?, ?, ?, ?, ?, ?);';
       var valuesArray = [id, Number(initialSum), paymentSystem, cardNumber, endDate, skinID];
       // Insert a new card
-      await transaction.executeSql(
+      transaction.executeSql(
         sqlTemplate,
         valuesArray
       );
       // Save SQL into file
-      await saveTransactionToFile(updatedAt, 'cards', id, sqlTemplate, valuesArray);
+      saveTransactionToFile(updatedAt, 'cards', id, sqlTemplate, valuesArray);
       console.log('saveTransactionToFile done!');
     });
     navigation.push("Home");

@@ -21,36 +21,42 @@ const IncomeScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
   const [incomeTypeID, setIncomeTypeID] = useState<number>(returnConfigurationData().IncomeTypes[0].id);
 
   function onCreateTransactionPressHandler(): void {
-    Database.transaction(async (transaction: SQLTransaction) => {
+    Database.transaction((transaction: SQLTransaction) => {
       var id = uuidv4();
       var updatedAt = `${new Date().getTime()}`;
       var sqlTemplate = 'INSERT INTO transactions (id, cardId, amount, date, type, actionType) VALUES (?, ?, ?, ?, ?, ?);';
       var valuesArray = [id, route.params.cardId, Number(sum), updatedAt, incomeTypeID, "income"];
       // Insert a new transaction
-      await transaction.executeSql(
+      transaction.executeSql(
         sqlTemplate,
         valuesArray
       );
+      // Save SQL into file
+      saveTransactionToFile(updatedAt, 'transactions', id, sqlTemplate, valuesArray);
+      console.log('Insert a new transaction done!');
+
       // Update card balance
-      await transaction.executeSql(
+      transaction.executeSql(
         "SELECT * FROM cards WHERE id = ?",
         [route.params.cardId],
         (t: SQLTransaction, result: SQLResultSet) => {
+          var sqlTemplate = 'UPDATE cards SET balance = ? WHERE id = ?;';
+          var valuesArray = [Number(result.rows._array[0].balance) + Number(sum), route.params.cardId];
+
           transaction.executeSql(
-            "UPDATE cards SET balance = ? WHERE id = ?",
-            [Number(result.rows._array[0].balance) + Number(sum), route.params.cardId],
+            sqlTemplate,
+            valuesArray,
             () => {
               navigation.push("Card", {
                 id: route.params.cardId,
               });
             }
           );
+          // Save SQL into file
+          saveTransactionToFile(updatedAt, 'cards', route.params.cardId, sqlTemplate, valuesArray);
+          console.log('Update card balance done!');
         }
       );
-      console.log('Update card balance done!');
-      // Save SQL into file
-      await saveTransactionToFile(updatedAt, 'transactions', id, sqlTemplate, valuesArray);
-      console.log('saveTransactionToFile done!');
     });
   }
 
