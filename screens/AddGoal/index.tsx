@@ -8,6 +8,9 @@ import Label from "components/UI/Label";
 import Input from "components/UI/Input";
 import MultilineInput from "components/UI/MultilineInput";
 import Button from "components/UI/Button";
+// Custom functions
+import updateSqlTemplate from "libs/updateSqlTemplate"
+import saveTransactionToFile from "libs/saveTransactionToFile"
 // UUID
 //import * as Crypto from 'expo-crypto';
 import 'react-native-get-random-values';
@@ -19,15 +22,23 @@ const AddGoalScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   const [goalDescription, setGoalDescription] = useState<string>("");
 
   function onAddGoalPressHandler(): void {
-    Database.transaction((transaction: SQLTransaction) => {
+    Database.transaction(async (transaction: SQLTransaction) => {
       var id = uuidv4();
-      transaction.executeSql(
-        "INSERT INTO goals (id, name, description, finalAmount, currentAmount) VALUES (?, ?, ?, ?, ?);",
-        [id, goalName, goalDescription, goalFinalAmount, 0],
+      var updatedAt = `${new Date().getTime()}`;
+      var valuesArray = [id, goalName, goalDescription, goalFinalAmount, 0]
+      var sqlTemplate = 'INSERT INTO goals (id, name, description, finalAmount, currentAmount) VALUES ({values});'
+      var sqlTemplateUpdated = await updateSqlTemplate(sqlTemplate, valuesArray);
+      // Insert a new goal
+      await transaction.executeSql(
+        sqlTemplateUpdated,
+        valuesArray,
         () => {
           navigation.push("Home");
         }
       );
+      // Save SQL into file
+      await saveTransactionToFile(updatedAt, 'goals', id, sqlTemplate, valuesArray);
+      console.log('saveTransactionToFile done!');
     });
   }
 

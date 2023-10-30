@@ -10,6 +10,9 @@ import Skin from "components/UI/Skin";
 import Input from "components/UI/Input";
 import Button from "components/UI/Button";
 import PaymentSystem from "components/UI/PaymentSystem";
+// Custom functions
+import updateSqlTemplate from "libs/updateSqlTemplate"
+import saveTransactionToFile from "libs/saveTransactionToFile"
 // UUID
 //import * as Crypto from 'expo-crypto';
 import 'react-native-get-random-values';
@@ -23,12 +26,20 @@ const AddCardScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   const [endDate, setEndDate] = useState<string>("");
 
   function onCreateCardPressHandler(): void {
-    Database.transaction((transaction: SQLTransaction) => {
+    Database.transaction(async (transaction: SQLTransaction) => {
       var id = uuidv4();
-      transaction.executeSql(
-        "INSERT INTO cards (id, balance, paymentSystem, number, endDate, colorId) VALUES (?, ?, ?, ?, ?, ?);",
-        [id, initialSum, paymentSystem, cardNumber, endDate, skinID]
+      var updatedAt = `${new Date().getTime()}`;
+      var valuesArray = [id, initialSum, paymentSystem, cardNumber, endDate, skinID]
+      var sqlTemplate = 'INSERT INTO cards (id, balance, paymentSystem, number, endDate, colorId) VALUES ({values});'
+      var sqlTemplateUpdated = await updateSqlTemplate(sqlTemplate, valuesArray);
+      // Insert a new card
+      await transaction.executeSql(
+        sqlTemplateUpdated,
+        valuesArray
       );
+      // Save SQL into file
+      await saveTransactionToFile(updatedAt, 'cards', id, sqlTemplate, valuesArray);
+      console.log('saveTransactionToFile done!');
     });
     navigation.push("Home");
   }
