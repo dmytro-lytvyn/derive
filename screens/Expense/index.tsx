@@ -9,11 +9,9 @@ import TopPanel from "components/UI/TopPanel";
 import Label from "components/UI/Label";
 import Input from "components/UI/Input";
 import Button from "components/UI/Button";
-// File System
-import * as FileSystem from 'expo-file-system';
-import { StorageAccessFramework } from 'expo-file-system';
-// Config
-import * as SecureStore from 'expo-secure-store';
+// Custom functions
+import updateSqlTemplate from "libs/updateSqlTemplate"
+import saveTransactionToFile from "libs/saveTransactionToFile"
 // UUID
 //import * as Crypto from 'expo-crypto';
 import 'react-native-get-random-values';
@@ -23,37 +21,18 @@ const ExpenseScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
   const [sum, setSum] = useState<string>("");
   const [expenseTypeID, setExpenseTypeID] = useState<number>(returnConfigurationData().ExpenseTypes[0].id);
 
-  async function saveSyncFile(updatedAt: String, entityType: String, entityId: String, originId: String, sql: String): void {
-    var fileName = `${updatedAt}+${entityType}+${entityId}+${originId}.sql`;
-    console.log(fileName);
-    // Get saved path
-    var uri = await SecureStore.getItemAsync('syncDirectory');
-    var fileUri = await StorageAccessFramework.createFileAsync(uri, fileName, 'application/x-sql');
-    console.log(fileUri);
-    await FileSystem.writeAsStringAsync(fileUri, sql, {encoding: FileSystem.EncodingType.UTF8})
-    console.log('After writeAsStringAsync');
-  }
-
   function onCreateTransactionPressHandler(): void {
     Database.transaction(async (transaction: SQLTransaction) => {
-      var originId = await SecureStore.getItemAsync('originId');
       var id = uuidv4();
       var updatedAt = `${new Date().getTime()}`;
       var valuesArray = [id, route.params.cardId, sum, updatedAt, expenseTypeID, "expense"]
-      var valuesTemplate = '?'
-      for (var index in valuesArray) {
-          if (index > 0) valuesTemplate += ', ?'
-      }
-      var valuesString = "'" + valuesArray.join("','") + "'"; // JSON.stringify(valuesArray)
-      var sql = 'INSERT INTO transactions (id, cardId, amount, date, type, actionType) VALUES ({values});'
+      var sqlTemplate = 'INSERT INTO transactions (id, cardId, amount, date, type, actionType) VALUES ({values});'
+      var sqlTemplateUpdated = await updateSqlTemplate(sqlTemplate, valuesArray);
       // Insert a new transaction
       await transaction.executeSql(
-        sql.replace('{values}', valuesTemplate),
+        sqlTemplateUpdated,
         valuesArray
       );
-      console.log(sql.replace('{values}', valuesString));
-      // Save SQL into file
-      saveSyncFile(updatedAt, 'transactions', id, originId, sql.replace('{values}', valuesString));
       // Update card balance
       await transaction.executeSql(
         "SELECT * FROM cards WHERE id = ?",
@@ -70,6 +49,10 @@ const ExpenseScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
           );
         }
       );
+      console.log('Update card balance done!');
+      // Save SQL into file
+      await saveTransactionToFile(updatedAt, 'transactions', id, sqlTemplate, valuesArray);
+      console.log('saveTransactionToFile done!');
     });
   }
 

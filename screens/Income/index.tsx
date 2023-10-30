@@ -11,6 +11,7 @@ import Input from "components/UI/Input";
 import Button from "components/UI/Button";
 // Custom functions
 import updateSqlTemplate from "libs/updateSqlTemplate"
+import saveTransactionToFile from "libs/saveTransactionToFile"
 // UUID
 //import * as Crypto from 'expo-crypto';
 import 'react-native-get-random-values';
@@ -27,10 +28,12 @@ const IncomeScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
       var valuesArray = [id, route.params.cardId, sum, updatedAt, incomeTypeID, "income"]
       var sqlTemplate = 'INSERT INTO transactions (id, cardId, amount, date, type, actionType) VALUES ({values});'
       var sqlTemplateUpdated = await updateSqlTemplate(sqlTemplate, valuesArray);
+      // Insert a new transaction
       await transaction.executeSql(
         sqlTemplateUpdated,
         valuesArray
       );
+      // Update card balance
       await transaction.executeSql(
         "SELECT * FROM cards WHERE id = ?",
         [route.params.cardId],
@@ -46,6 +49,10 @@ const IncomeScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
           );
         }
       );
+      console.log('Update card balance done!');
+      // Save SQL into file
+      await saveTransactionToFile(updatedAt, 'transactions', id, sqlTemplate, valuesArray);
+      console.log('saveTransactionToFile done!');
     });
   }
 
