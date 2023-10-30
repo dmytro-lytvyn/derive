@@ -10,6 +10,13 @@ import TopPanel from "components/UI/TopPanel";
 import Label from "components/UI/Label";
 import Button from "components/UI/Button";
 import Input from "components/UI/Input";
+// Custom functions
+import updateSqlTemplate from "libs/updateSqlTemplate"
+import saveTransactionToFile from "libs/saveTransactionToFile"
+// UUID
+//import * as Crypto from 'expo-crypto';
+import 'react-native-get-random-values';
+import { v4 as uuidv4 } from 'uuid';
 
 const TransferScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
   const [sum, setSum] = useState<string>("");
@@ -41,26 +48,50 @@ const TransferScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
   }
 
   function onTransferConfirmHandler(): void {
-    Database.transaction((transaction: SQLTransaction) => {
-      transaction.executeSql("SELECT * FROM cards WHERE id = ?", [route.params.cardId], (t, result: SQLResultSet) => {
-        transaction.executeSql("UPDATE cards SET balance = ? WHERE id = ?", [
-          result.rows._array[0].balance - Number(sum),
-          route.params.cardId,
-        ]);
-      });
-      transaction.executeSql(
+    var updatedAt = `${new Date().getTime()}`;
+
+    Database.transaction(async (transaction: SQLTransaction) => {
+      // From card
+      await transaction.executeSql(
+        "SELECT * FROM cards WHERE id = ?",
+        [route.params.cardId],
+        async (t, result: SQLResultSet) => {
+          var valuesArray = [result.rows._array[0].balance - Number(sum), route.params.cardId]
+          var sqlTemplate = 'UPDATE cards SET balance = ? WHERE id = ?;'
+          var sqlTemplateUpdated = await updateSqlTemplate(sqlTemplate, valuesArray);
+
+          await transaction.executeSql(
+            sqlTemplate,
+            valuesArray
+          );
+          console.log('Update card 1 done!');
+          // Save SQL into file
+          await saveTransactionToFile(updatedAt, 'cards', route.params.cardId, sqlTemplate, valuesArray);
+          console.log('saveTransactionToFile done!');
+        });
+
+      // To card
+      await transaction.executeSql(
         "SELECT * FROM cards WHERE id = ?",
         [Number(selectedCard?.id)],
-        (t, result: SQLResultSet) => {
-          transaction.executeSql(
-            "UPDATE cards SET balance = ? WHERE id = ?",
-            [result.rows._array[0].balance + Number(sum), Number(selectedCard?.id)],
+        async (t, result: SQLResultSet) => {
+          var valuesArray = [result.rows._array[0].balance + Number(sum), selectedCard?.id]
+          var sqlTemplate = 'UPDATE cards SET balance = ? WHERE id = ?;'
+          var sqlTemplateUpdated = await updateSqlTemplate(sqlTemplate, valuesArray);
+
+          await transaction.executeSql(
+            sqlTemplate,
+            valuesArray,
             () => {
               navigation.push("Card", {
                 id: route.params.cardId,
               });
             }
           );
+          console.log('Update card 2 done!');
+          // Save SQL into file
+          await saveTransactionToFile(updatedAt, 'cards', selectedCard?.id, sqlTemplate, valuesArray);
+          console.log('saveTransactionToFile done!');
         }
       );
     });
