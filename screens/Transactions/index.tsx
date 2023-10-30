@@ -13,7 +13,7 @@ const TransactionsScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   useEffect(() => {
     Database.transaction((transaction: SQLTransaction) => {
       transaction.executeSql(
-        "SELECT * FROM transactions ORDER BY id DESC",
+        "SELECT * FROM transactions ORDER BY date DESC",
         [],
         (transaction: SQLTransaction, result: SQLResultSet) => {
           setTransactions(result.rows._array);

@@ -23,7 +23,7 @@ const TransactionScreen: FunctionComponent<IScreen> = ({ navigation, route }) =>
         (_: SQLTransaction, result: SQLResultSet) => {
           setCurrentTransaction(result.rows._array[0]);
           transaction.executeSql(
-            "SELECT * FROM transactions WHERE type = ? AND id != ? ORDER BY id DESC LIMIT 5",
+            "SELECT * FROM transactions WHERE type = ? AND id != ? ORDER BY date DESC LIMIT 5",
             [result.rows._array[0].type, result.rows._array[0].id],
             (transaction: SQLTransaction, result: SQLResultSet) => {
               setTransactions(result.rows._array);

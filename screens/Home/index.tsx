@@ -24,7 +24,7 @@ const HomeScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
   useEffect(() => {
     Database.transaction((transaction: SQLTransaction) => {
       transaction.executeSql(
-        "SELECT * FROM cards ORDER BY id DESC",
+        "SELECT * FROM cards ORDER BY endDate DESC",
         [],
         (transaction: SQLTransaction, result: SQLResultSet) => {
           setCards(result.rows._array);
@@ -33,7 +33,7 @@ const HomeScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
     });
     Database.transaction((transaction: SQLTransaction) => {
       transaction.executeSql(
-        "SELECT * FROM goals ORDER BY id DESC",
+        "SELECT * FROM goals ORDER BY name",
         [],
         (transaction: SQLTransaction, result: SQLResultSet) => {
           setGoals(result.rows._array);
@@ -42,7 +42,7 @@ const HomeScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
     });
     Database.transaction((transaction: SQLTransaction) => {
       transaction.executeSql(
-        "SELECT * FROM transactions ORDER BY id DESC LIMIT 5",
+        "SELECT * FROM transactions ORDER BY date DESC LIMIT 5",
         [],
         (transaction: SQLTransaction, result: SQLResultSet) => {
           setTransactions(result.rows._array);

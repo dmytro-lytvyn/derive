@@ -8,6 +8,10 @@ import Label from "components/UI/Label";
 import Input from "components/UI/Input";
 import MultilineInput from "components/UI/MultilineInput";
 import Button from "components/UI/Button";
+// UUID
+//import * as Crypto from 'expo-crypto';
+import 'react-native-get-random-values';
+import { v4 as uuidv4 } from 'uuid';
 
 const AddGoalScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   const [goalName, setGoalName] = useState<string>("");
@@ -16,9 +20,10 @@ const AddGoalScreen: FunctionComponent<IScreen> = ({ navigation }) => {
 
   function onAddGoalPressHandler(): void {
     Database.transaction((transaction: SQLTransaction) => {
+      var id = uuidv4();
       transaction.executeSql(
-        "INSERT INTO goals (name, description, finalAmount, currentAmount) VALUES (?, ?, ?, ?);",
-        [goalName, goalDescription, goalFinalAmount, 0],
+        "INSERT INTO goals (id, name, description, finalAmount, currentAmount) VALUES (?, ?, ?, ?, ?);",
+        [id, goalName, goalDescription, goalFinalAmount, 0],
         () => {
           navigation.push("Home");
         }

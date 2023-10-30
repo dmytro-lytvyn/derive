@@ -1,3 +1,4 @@
+// App entities
 interface INavigation {
   push: (path: string, params?: any) => any;
   navigate: (path: string, params?: any) => any;
@@ -10,13 +11,15 @@ interface IRoute {
   name: string;
   params: any;
 }
+
 interface IScreen {
   navigation: INavigation;
   route: IRoute;
 }
 
+// Database entities
 interface ICard {
-  id: number;
+  id: string;
   balance: number;
   paymentSystem: string;
   number: string;
@@ -25,7 +28,7 @@ interface ICard {
 }
 
 interface IGoal {
-  id: number;
+  id: string;
   name: string;
   description: string;
   finalAmount: number;
@@ -34,7 +37,7 @@ interface IGoal {
 
 interface ITransaction {
   id: string;
-  cardId: number;
+  cardId: string;
   amount: number;
   date: string;
   type: string;

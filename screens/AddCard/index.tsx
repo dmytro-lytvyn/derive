@@ -10,6 +10,10 @@ import Skin from "components/UI/Skin";
 import Input from "components/UI/Input";
 import Button from "components/UI/Button";
 import PaymentSystem from "components/UI/PaymentSystem";
+// UUID
+//import * as Crypto from 'expo-crypto';
+import 'react-native-get-random-values';
+import { v4 as uuidv4 } from 'uuid';
 
 const AddCardScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   const [paymentSystem, setPaymentSystem] = useState<IPaymentSystem>("Visa");
@@ -20,9 +24,10 @@ const AddCardScreen: FunctionComponent<IScreen> = ({ navigation }) => {
 
   function onCreateCardPressHandler(): void {
     Database.transaction((transaction: SQLTransaction) => {
+      var id = uuidv4();
       transaction.executeSql(
-        "INSERT INTO cards (balance, paymentSystem, number, endDate, colorId) VALUES (?, ?, ?, ?, ?);",
-        [initialSum, paymentSystem, cardNumber, endDate, skinID]
+        "INSERT INTO cards (id, balance, paymentSystem, number, endDate, colorId) VALUES (?, ?, ?, ?, ?, ?);",
+        [id, initialSum, paymentSystem, cardNumber, endDate, skinID]
       );
     });
     navigation.push("Home");
