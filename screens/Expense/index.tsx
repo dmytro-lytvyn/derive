@@ -12,16 +12,22 @@ import Button from "components/UI/Button";
 // File System
 import * as FileSystem from 'expo-file-system';
 import { StorageAccessFramework } from 'expo-file-system';
+// Config
+import * as SecureStore from 'expo-secure-store';
+// UUID
+//import * as Crypto from 'expo-crypto';
+import 'react-native-get-random-values';
+import { v4 as uuidv4 } from 'uuid';
 
 const ExpenseScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
   const [sum, setSum] = useState<string>("");
   const [expenseTypeID, setExpenseTypeID] = useState<number>(returnConfigurationData().ExpenseTypes[0].id);
 
-  async function saveSyncFile(updatedAt: String, entityType: String, entityId: String, origin: String, sql: String): void {
-    var fileName = `${updatedAt}+${entityType}+${entityId}+${origin}.sql`;
+  async function saveSyncFile(updatedAt: String, entityType: String, entityId: String, originId: String, sql: String): void {
+    var fileName = `${updatedAt}+${entityType}+${entityId}+${originId}.sql`;
     console.log(fileName);
     // Get saved path
-    var uri = 'content://com.android.externalstorage.documents/tree/primary%3ASync%2FDerive';
+    var uri = await SecureStore.getItemAsync('syncDirectory');
     var fileUri = await StorageAccessFramework.createFileAsync(uri, fileName, 'application/x-sql');
     console.log(fileUri);
     await FileSystem.writeAsStringAsync(fileUri, sql, {encoding: FileSystem.EncodingType.UTF8})
@@ -30,11 +36,16 @@ const ExpenseScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
 
   function onCreateTransactionPressHandler(): void {
     Database.transaction(async (transaction: SQLTransaction) => {
+      var originId = await SecureStore.getItemAsync('originId');
+      var id = uuidv4();
       var updatedAt = `${new Date().getTime()}`;
-      var valuesTemplate = '?, ?, ?, ?, ?'
-      var valuesArray = [route.params.cardId, sum, updatedAt, expenseTypeID, "expense"]
+      var valuesArray = [id, route.params.cardId, sum, updatedAt, expenseTypeID, "expense"]
+      var valuesTemplate = '?'
+      for (var index in valuesArray) {
+          if (index > 0) valuesTemplate += ', ?'
+      }
       var valuesString = "'" + valuesArray.join("','") + "'"; // JSON.stringify(valuesArray)
-      var sql = 'INSERT INTO transactions (cardId, amount, date, type, actionType) VALUES ({values});'
+      var sql = 'INSERT INTO transactions (id, cardId, amount, date, type, actionType) VALUES ({values});'
       // Insert a new transaction
       await transaction.executeSql(
         sql.replace('{values}', valuesTemplate),
@@ -42,7 +53,7 @@ const ExpenseScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
       );
       console.log(sql.replace('{values}', valuesString));
       // Save SQL into file
-      saveSyncFile(updatedAt, 'transactions', route.params.cardId, 'debug', sql.replace('{values}', valuesString));
+      saveSyncFile(updatedAt, 'transactions', id, originId, sql.replace('{values}', valuesString));
       // Update card balance
       await transaction.executeSql(
         "SELECT * FROM cards WHERE id = ?",

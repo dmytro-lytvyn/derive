@@ -11,45 +11,58 @@ import TopPanel from "components/UI/TopPanel";
 // File System
 import * as FileSystem from 'expo-file-system';
 import { StorageAccessFramework } from 'expo-file-system';
+// Config
+import * as SecureStore from 'expo-secure-store';
+// UUID
+//import * as Crypto from 'expo-crypto';
+import 'react-native-get-random-values';
+import { v4 as uuidv4 } from 'uuid';
 
 const StartScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  async function getOrGenerateOriginId(): void {
+    var originId = await SecureStore.getItemAsync('originId');
+    if (!originId) {
+      originId = uuidv4();
+      await SecureStore.setItemAsync('originId', originId);
+    }
+    console.log(`Current originId = ${originId}`);
+  }
+
   async function requestSyncDirectoryPermissions(uri: String): void {
     // If we have no permissions, request them
-    console.log('Before requestDirectoryPermissionsAsync');
     const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync(uri);
-    console.log('After requestDirectoryPermissionsAsync');
     if (permissions.granted) {
       const uri = permissions.directoryUri;
-      console.log(uri);
       // Save chosen URI path
+      await SecureStore.setItemAsync('syncDirectory', uri);
+      console.log(`Current syncDirectory = ${uri}`);
     } else {
       console.log('Permission not granted!');
-      requestSyncDirectoryPermissions(uri);
+      await requestSyncDirectoryPermissions(uri);
     };
   }
 
-  async function checkSyncDirectoryPermissions(): void {
-    // Requests permissions for external directory
-    //const { StorageAccessFramework } = FileSystem;
-
+  async function getSyncPathOrRequestPermissions(): String {
     // Get saved path
-    var uri = 'content://com.android.externalstorage.documents/tree/primary%3ASync%2FDerive';
-    // Check if we have permissions to the path
-    var files = await StorageAccessFramework.readDirectoryAsync(uri)
-        .catch((error) => {
-          console.log(error);
-          requestSyncDirectoryPermissions(uri);
-        });
+    var uri = await SecureStore.getItemAsync('syncDirectory');
+    if (!uri) {
+      // Check if we have permissions to the path
+      var files = await StorageAccessFramework.readDirectoryAsync(uri)
+          .catch((error) => {
+            console.log(error);
+            requestSyncDirectoryPermissions(uri);
+          });
+    } else {
+      console.log(`Current syncDirectory = ${uri}`);
+    }
+    return uri;
   }
 
   async function listSyncDirectoryFiles(): void {
-    console.log('Before setExternalDirectory');
-    //const { StorageAccessFramework } = FileSystem;
-    
     // Get saved path
-    var uri = 'content://com.android.externalstorage.documents/tree/primary%3ASync%2FDerive';
+    var uri = await getSyncPathOrRequestPermissions();
     var files = await StorageAccessFramework.readDirectoryAsync(uri);
     console.log(`Files inside ${uri}:\n${JSON.stringify(files)}`);
     const data_string = await FileSystem.readAsStringAsync(files[0], {encoding: FileSystem.EncodingType.UTF8});
@@ -58,11 +71,13 @@ const StartScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   }
 
   function onLetsStartPressHandler(): void {
-    checkSyncDirectoryPermissions();
+    getSyncPathOrRequestPermissions();
     navigation.push("AddCard");
   }
 
   useEffect(() => {
+    getOrGenerateOriginId();
+
     Database.transaction((transaction: SQLTransaction) => {
       initializeTables(transaction);
       transaction.executeSql("SELECT * FROM cards", [], (transaction: SQLTransaction, result: SQLResultSet) => {

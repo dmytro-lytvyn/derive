@@ -33,7 +33,7 @@ interface IGoal {
 }
 
 interface ITransaction {
-  id: number;
+  id: string;
   cardId: number;
   amount: number;
   date: string;
