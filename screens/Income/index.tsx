@@ -9,6 +9,8 @@ import TopPanel from "components/UI/TopPanel";
 import Label from "components/UI/Label";
 import Input from "components/UI/Input";
 import Button from "components/UI/Button";
+// Custom functions
+import updateSqlTemplate from "libs/updateSqlTemplate"
 // UUID
 //import * as Crypto from 'expo-crypto';
 import 'react-native-get-random-values';
@@ -22,9 +24,12 @@ const IncomeScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
     Database.transaction(async (transaction: SQLTransaction) => {
       var id = uuidv4();
       var updatedAt = `${new Date().getTime()}`;
+      var valuesArray = [id, route.params.cardId, sum, updatedAt, incomeTypeID, "income"]
+      var sqlTemplate = 'INSERT INTO transactions (id, cardId, amount, date, type, actionType) VALUES ({values});'
+      var sqlTemplateUpdated = await updateSqlTemplate(sqlTemplate, valuesArray);
       await transaction.executeSql(
-        "INSERT INTO transactions (id, cardId, amount, date, type, actionType) VALUES (?, ?, ?, ?, ?, ?);",
-        [id, route.params.cardId, sum, updatedAt, incomeTypeID, "income"]
+        sqlTemplateUpdated,
+        valuesArray
       );
       await transaction.executeSql(
         "SELECT * FROM cards WHERE id = ?",
