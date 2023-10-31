@@ -77,25 +77,26 @@ const StartScreen: FunctionComponent<IScreen> = ({ navigation }) => {
       if (file.endsWith('.sql') && !file.endsWith(`${originId}.sql`)) {
         var fileName = file.substr(file.lastIndexOf('%2F') + 3).replace('.sql', '');
         var fileParts = fileName.split('%2B');
-        console.log(`fileParts: ${JSON.stringify(fileParts)}`);
+        //console.log(`fileParts: ${JSON.stringify(fileParts)}`);
         var fileUpdatedAt = fileParts[0];
         var fileEntityType = fileParts[1];
         var fileEntityId = fileParts[2];
         var fileOriginId = fileParts[3];
-        if (!(fileOriginId in originOffsets) || (originOffsets[fileOriginId] < fileUpdatedAt)) {
-          console.log(`fileOriginId "${fileOriginId}"" is not known or latest fileUpdatedAt is older than ${fileUpdatedAt} - will process the file!`);
+        var fileOffset = `${fileOriginId}+${fileEntityType}`;
+        if (!(fileOffset in originOffsets) || (originOffsets[fileOffset] < fileUpdatedAt)) {
+          console.log(`fileOffset "${fileOffset}" is not known or latest fileUpdatedAt is older than ${fileUpdatedAt} - will process this sync file!`);
           filesNew.push(file);
-          originOffsets[fileOriginId] = fileUpdatedAt;
-          console.log(`Saving last fileUpdatedAt for fileOriginId "${fileOriginId}"" as ${fileUpdatedAt}...`);
+          originOffsets[fileOffset] = fileUpdatedAt;
+          console.log(`Saving last fileUpdatedAt for fileOffset "${fileOffset}" as ${fileUpdatedAt}...`);
           await SecureStore.setItemAsync('originOffsets', JSON.stringify(originOffsets));
         } else {
-          console.log(`fileOriginId "${fileOriginId}"" is already known and latest fileUpdatedAt is same or newer than ${fileUpdatedAt} - skipping the file!`);
+          //console.log(`fileOffset "${fileOffset}" is already known and latest fileUpdatedAt is same or newer than ${fileUpdatedAt} - skipping this sync file!`);
         }
       }
     }
     console.log(`Found ${filesNew.length} new file(s) to process`);
     for (file of filesNew) {
-      console.log(`Processing file: ${file}`);
+      console.log(`Processing sync file: ${file}`);
       const fileSql = await FileSystem.readAsStringAsync(file, {encoding: FileSystem.EncodingType.UTF8});
       console.log(fileSql);
       Database.transaction((transaction: SQLTransaction) => {
