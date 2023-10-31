@@ -60,15 +60,47 @@ const StartScreen: FunctionComponent<IScreen> = ({ navigation }) => {
     return uri;
   }
 
-  async function listSyncDirectoryFiles(): void {
+  async function processSyncFiles(): void {
     // Get saved path
     var uri = await getSyncPathOrRequestPermissions();
     var files = await StorageAccessFramework.readDirectoryAsync(uri);
-    console.log(`Files inside ${uri}:\n${JSON.stringify(files)}`);
-    if (files.length) {
-      const data_string = await FileSystem.readAsStringAsync(files[0], {encoding: FileSystem.EncodingType.UTF8});
-      console.log(`Loaded ${data_string.length} bytes`);
-      console.log(data_string);
+    files.sort();
+
+    var originId = await SecureStore.getItemAsync('originId');
+    var originOffsets: { [key: string]: string; } = {};
+    var originOffsetsString = await SecureStore.getItemAsync('originOffsets');
+    console.log(`originOffsets: ${originOffsetsString}`);
+    if (originOffsetsString) originOffsets = JSON.parse(originOffsetsString);
+
+    var filesNew = [];
+    for (file of files) {
+      if (file.endsWith('.sql') && !file.endsWith(`${originId}.sql`)) {
+        var fileName = file.substr(file.lastIndexOf('%2F') + 3).replace('.sql', '');
+        var fileParts = fileName.split('%2B');
+        console.log(`fileParts: ${JSON.stringify(fileParts)}`);
+        var fileUpdatedAt = fileParts[0];
+        var fileEntityType = fileParts[1];
+        var fileEntityId = fileParts[2];
+        var fileOriginId = fileParts[3];
+        if (!(fileOriginId in originOffsets) || (originOffsets[fileOriginId] < fileUpdatedAt)) {
+          console.log(`fileOriginId "${fileOriginId}"" is not known or latest fileUpdatedAt is older than ${fileUpdatedAt} - will process the file!`);
+          filesNew.push(file);
+          originOffsets[fileOriginId] = fileUpdatedAt;
+          console.log(`Saving last fileUpdatedAt for fileOriginId "${fileOriginId}"" as ${fileUpdatedAt}...`);
+          await SecureStore.setItemAsync('originOffsets', JSON.stringify(originOffsets));
+        } else {
+          console.log(`fileOriginId "${fileOriginId}"" is already known and latest fileUpdatedAt is same or newer than ${fileUpdatedAt} - skipping the file!`);
+        }
+      }
+    }
+    console.log(`Found ${filesNew.length} new file(s) to process`);
+    for (file of filesNew) {
+      console.log(`Processing file: ${file}`);
+      const fileSql = await FileSystem.readAsStringAsync(file, {encoding: FileSystem.EncodingType.UTF8});
+      console.log(fileSql);
+      Database.transaction((transaction: SQLTransaction) => {
+        transaction.executeSql(fileSql,[]);
+      });
     }
   }
 
@@ -82,12 +114,16 @@ const StartScreen: FunctionComponent<IScreen> = ({ navigation }) => {
 
     Database.transaction((transaction: SQLTransaction) => {
       initializeTables(transaction);
+    });
+
+    processSyncFiles();
+
+    Database.transaction((transaction: SQLTransaction) => {
       transaction.executeSql(
         "SELECT * FROM cards",
         [],
         (transaction: SQLTransaction, result: SQLResultSet) => {
           if (result.rows.length) {
-            listSyncDirectoryFiles();
             navigation.push("Home");
           } else {
             setIsLoading(false);
