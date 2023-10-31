@@ -27,9 +27,9 @@ const AddCardScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   function onCreateCardPressHandler(): void {
     Database.transaction((transaction: SQLTransaction) => {
       var id = uuidv4();
-      var updatedAt = `${new Date().getTime()}`;
-      var sqlTemplate = 'INSERT INTO cards (id, balance, paymentSystem, number, endDate, colorId) VALUES (?, ?, ?, ?, ?, ?);';
-      var valuesArray = [id, Number(initialSum), paymentSystem, cardNumber, endDate, skinID];
+      var updatedAt = new Date().getTime();
+      var sqlTemplate = 'INSERT INTO cards (id, createdAt, updatedAt, balance, paymentSystem, number, endDate, colorId) VALUES (?, ?, ?, ?, ?, ?, ?, ?);';
+      var valuesArray = [id, updatedAt, updatedAt, Number(initialSum), paymentSystem, cardNumber, endDate, skinID];
       // Insert a new card
       transaction.executeSql(
         sqlTemplate,

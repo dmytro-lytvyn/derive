@@ -23,9 +23,9 @@ const AddGoalScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   function onAddGoalPressHandler(): void {
     Database.transaction((transaction: SQLTransaction) => {
       var id = uuidv4();
-      var updatedAt = `${new Date().getTime()}`;
-      var sqlTemplate = 'INSERT INTO goals (id, name, description, finalAmount, currentAmount) VALUES (?, ?, ?, ?, ?);';
-      var valuesArray = [id, goalName, goalDescription, Number(goalFinalAmount), 0];
+      var updatedAt = new Date().getTime();
+      var sqlTemplate = 'INSERT INTO goals (id, createdAt, updatedAt, name, description, finalAmount, currentAmount) VALUES (?, ?, ?, ?, ?, ?, ?);';
+      var valuesArray = [id, updatedAt, updatedAt, goalName, goalDescription, Number(goalFinalAmount), 0];
       // Insert a new goal
       transaction.executeSql(
         sqlTemplate,

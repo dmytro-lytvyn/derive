@@ -12,10 +12,6 @@ import Button from "components/UI/Button";
 import Input from "components/UI/Input";
 // Custom functions
 import saveTransactionToFile from "libs/saveTransactionToFile"
-// UUID
-//import * as Crypto from 'expo-crypto';
-import 'react-native-get-random-values';
-import { v4 as uuidv4 } from 'uuid';
 
 const TransferScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
   const [sum, setSum] = useState<number>(0);
@@ -47,50 +43,38 @@ const TransferScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
   }
 
   function onTransferConfirmHandler(): void {
-    var updatedAt = `${new Date().getTime()}`;
-    var sqlSelectTemplate = 'SELECT * FROM cards WHERE id = ?;';
-    var sqlUpdateTemplate = 'UPDATE cards SET balance = ? WHERE id = ?;';
+    var updatedAt = new Date().getTime();
+    var sqlTemplate = 'UPDATE cards SET balance = balance + ?, updatedAt = ? WHERE id = ?;';
 
     Database.transaction((transaction: SQLTransaction) => {
       // From card
-      transaction.executeSql(
-        sqlSelectTemplate,
-        [route.params.cardId],
-        (t, result: SQLResultSet) => {
-          var valuesArray = [Number(result.rows._array[0].balance) - Number(sum), route.params.cardId];
+      var valuesArray = [-1 * Number(sum), updatedAt, route.params.cardId];
 
-          transaction.executeSql(
-            sqlUpdateTemplate,
-            valuesArray
-          );
-          console.log('Update card 1 done!');
-          // Save SQL into file
-          saveTransactionToFile(updatedAt, 'cards', String(route.params.cardId), sqlUpdateTemplate, valuesArray);
-          console.log('saveTransactionToFile 1 done!');
-        });
+      transaction.executeSql(
+        sqlTemplate,
+        valuesArray
+      );
+      console.log('Update card 1 done!');
+      // Save SQL into file
+      saveTransactionToFile(updatedAt, 'cards', String(route.params.cardId), sqlTemplate, valuesArray);
+      console.log('saveTransactionToFile 1 done!');
 
       // To card
-      transaction.executeSql(
-        sqlSelectTemplate,
-        [selectedCard?.id],
-        (t, result: SQLResultSet) => {
-          var valuesArray = [Number(result.rows._array[0].balance) + Number(sum), selectedCard?.id];
+      valuesArray = [Number(sum), updatedAt, selectedCard?.id];
 
-          transaction.executeSql(
-            sqlUpdateTemplate,
-            valuesArray,
-            () => {
-              navigation.push("Card", {
-                id: route.params.cardId,
-              });
-            }
-          );
-          console.log('Update card 2 done!');
-          // Save SQL into file
-          saveTransactionToFile(updatedAt, 'cards', String(selectedCard?.id), sqlUpdateTemplate, valuesArray);
-          console.log('saveTransactionToFile 2 done!');
+      transaction.executeSql(
+        sqlTemplate,
+        valuesArray,
+        () => {
+          navigation.push("Card", {
+            id: route.params.cardId,
+          });
         }
       );
+      console.log('Update card 2 done!');
+      // Save SQL into file
+      saveTransactionToFile(updatedAt, 'cards', String(selectedCard?.id), sqlTemplate, valuesArray);
+      console.log('saveTransactionToFile 2 done!');
     });
   }
 
@@ -110,7 +94,7 @@ const TransferScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
                       colorId={card.colorId}
                       balance={card.balance}
                       paymentSystem={card.paymentSystem}
-                      date={card.endDate}
+                      endDate={card.endDate}
                       onPressHandler={() => {
                         setSelectedCard(card);
                         setIsOpenChooseCardScreen(false);
@@ -138,7 +122,7 @@ const TransferScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
                   colorId={selectedCard.colorId}
                   balance={selectedCard.balance}
                   paymentSystem={selectedCard.paymentSystem}
-                  date={selectedCard.endDate}
+                  endDate={selectedCard.endDate}
                 />
               ) : (
                 <EmptyCard onPressHandler={onChooseCardPressHandler} />

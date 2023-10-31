@@ -21,13 +21,14 @@ const EditCardScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
 
   function onUpdateCardPressHandler(): void {
     Database.transaction((transaction: SQLTransaction) => {
-      var updatedAt = `${new Date().getTime()}`;
-      var sqlTemplate = 'UPDATE cards SET number = ?, endDate = ?, paymentSystem = ?, colorId = ? WHERE id = ?;';
+      var updatedAt = new Date().getTime();
+      var sqlTemplate = 'UPDATE cards SET number = ?, endDate = ?, paymentSystem = ?, colorId = ?, updatedAt = ? WHERE id = ?;';
       var valuesArray = [
         cardNumber,
         endDate,
         activePaymentSystem,
         activeSkin,
+        updatedAt,
         route.params.id,
       ];
       // Update card
@@ -44,7 +45,7 @@ const EditCardScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
 
   function onRemoveCardPressHandler(): void {
     Database.transaction((transaction: SQLTransaction) => {
-      var updatedAt = `${new Date().getTime()}`;
+      var updatedAt = new Date().getTime();
       var valuesArray = [route.params.id];
 
       var sqlTemplate = 'DELETE FROM transactions WHERE cardId = ?;';

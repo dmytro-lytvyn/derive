@@ -42,7 +42,7 @@ const HomeScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
     });
     Database.transaction((transaction: SQLTransaction) => {
       transaction.executeSql(
-        "SELECT * FROM transactions ORDER BY date DESC LIMIT 5",
+        "SELECT * FROM transactions ORDER BY createdAt DESC LIMIT 5",
         [],
         (transaction: SQLTransaction, result: SQLResultSet) => {
           setTransactions(result.rows._array);
@@ -64,7 +64,7 @@ const HomeScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
                   key={card.id}
                   id={card.id}
                   number={card.number}
-                  date={card.endDate}
+                  endDate={card.endDate}
                   colorId={card.colorId}
                   balance={card.balance}
                   paymentSystem={card.paymentSystem}

@@ -23,9 +23,9 @@ const IncomeScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
   function onCreateTransactionPressHandler(): void {
     Database.transaction((transaction: SQLTransaction) => {
       var id = uuidv4();
-      var updatedAt = `${new Date().getTime()}`;
-      var sqlTemplate = 'INSERT INTO transactions (id, cardId, amount, date, type, actionType) VALUES (?, ?, ?, ?, ?, ?);';
-      var valuesArray = [id, route.params.cardId, Number(sum), updatedAt, incomeTypeID, "income"];
+      var updatedAt = new Date().getTime();
+      var sqlTemplate = 'INSERT INTO transactions (id, createdAt, updatedAt, cardId, amount, type, actionType) VALUES (?, ?, ?, ?, ?, ?, ?);';
+      var valuesArray = [id, updatedAt, updatedAt, route.params.cardId, Number(sum), incomeTypeID, "income"];
       // Insert a new transaction
       transaction.executeSql(
         sqlTemplate,
@@ -35,28 +35,21 @@ const IncomeScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
       saveTransactionToFile(updatedAt, 'transactions', id, sqlTemplate, valuesArray);
       console.log('Insert a new transaction done!');
 
+      sqlTemplate = 'UPDATE cards SET balance = balance + ?, updatedAt = ? WHERE id = ?;';
+      valuesArray = [Number(sum), updatedAt, route.params.cardId];
       // Update card balance
       transaction.executeSql(
-        "SELECT * FROM cards WHERE id = ?",
-        [route.params.cardId],
-        (t: SQLTransaction, result: SQLResultSet) => {
-          var sqlTemplate = 'UPDATE cards SET balance = ? WHERE id = ?;';
-          var valuesArray = [Number(result.rows._array[0].balance) + Number(sum), route.params.cardId];
-
-          transaction.executeSql(
-            sqlTemplate,
-            valuesArray,
-            () => {
-              navigation.push("Card", {
-                id: route.params.cardId,
-              });
-            }
-          );
-          // Save SQL into file
-          saveTransactionToFile(updatedAt, 'cards', route.params.cardId, sqlTemplate, valuesArray);
-          console.log('Update card balance done!');
+        sqlTemplate,
+        valuesArray,
+        () => {
+          navigation.push("Card", {
+            id: route.params.cardId,
+          });
         }
       );
+      // Save SQL into file
+      saveTransactionToFile(updatedAt, 'cards', route.params.cardId, sqlTemplate, valuesArray);
+      console.log('Update card balance done!');
     });
   }
 

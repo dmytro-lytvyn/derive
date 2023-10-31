@@ -36,9 +36,9 @@ const GoalScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
     const newAmount = currentAmount + Number(amountToAdd) + -Number(amountToWithdraw);
     const completeAmount = newAmount >= 0 ? newAmount : 0;
     Database.transaction((transaction: SQLTransaction) => {
-      var updatedAt = `${new Date().getTime()}`;
-      var sqlTemplate = 'UPDATE goals SET currentAmount = ? WHERE id = ?;';
-      var valuesArray = [completeAmount, route.params.id];
+      var updatedAt = new Date().getTime();
+      var sqlTemplate = 'UPDATE goals SET currentAmount = ?, updatedAt = ? WHERE id = ?;';
+      var valuesArray = [completeAmount, updatedAt, route.params.id];
       // Update goal
       transaction.executeSql(
         sqlTemplate,
@@ -55,7 +55,7 @@ const GoalScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
 
   function onRemoveGoalPressHandler(): void {
     Database.transaction((transaction: SQLTransaction) => {
-      var updatedAt = `${new Date().getTime()}`;
+      var updatedAt = new Date().getTime();
       var sqlTemplate = 'DELETE FROM goals WHERE id = ?;';
       var valuesArray = [route.params.id];
       // Delete goal

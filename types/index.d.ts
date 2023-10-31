@@ -20,6 +20,8 @@ interface IScreen {
 // Database entities
 interface ICard {
   id: string;
+  createdAt: number;
+  updatedAt: number;
   balance: number;
   paymentSystem: string;
   number: string;
@@ -29,6 +31,8 @@ interface ICard {
 
 interface IGoal {
   id: string;
+  createdAt: number;
+  updatedAt: number;
   name: string;
   description: string;
   finalAmount: number;
@@ -37,9 +41,10 @@ interface IGoal {
 
 interface ITransaction {
   id: string;
+  createdAt: number;
+  updatedAt: number;
   cardId: string;
   amount: number;
-  date: string;
   type: string;
   actionType: string;
 }

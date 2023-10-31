@@ -23,7 +23,7 @@ const TransactionScreen: FunctionComponent<IScreen> = ({ navigation, route }) =>
         (_: SQLTransaction, result: SQLResultSet) => {
           setCurrentTransaction(result.rows._array[0]);
           transaction.executeSql(
-            "SELECT * FROM transactions WHERE type = ? AND id != ? ORDER BY date DESC LIMIT 5",
+            "SELECT * FROM transactions WHERE type = ? AND id != ? ORDER BY createdAt DESC LIMIT 5",
             [result.rows._array[0].type, result.rows._array[0].id],
             (transaction: SQLTransaction, result: SQLResultSet) => {
               setTransactions(result.rows._array);
@@ -56,7 +56,7 @@ const TransactionScreen: FunctionComponent<IScreen> = ({ navigation, route }) =>
               )?.title
             }
           </Text>
-          <Text style={[styles.center, styles.transactionDate]}>{toDateFormat(currentTransaction?.date || "")}</Text>
+          <Text style={[styles.center, styles.transactionDate]}>{toDateFormat(currentTransaction?.createdAt || "")}</Text>
           <Text style={[styles.center, styles.transactionAmount]}>
             {currentTransaction?.actionType === "income" ? "+ " : "- "}
             {toPriceFormat(currentTransaction?.amount || 0)} ₽

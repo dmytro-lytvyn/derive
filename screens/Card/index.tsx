@@ -35,7 +35,7 @@ const CardScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
     });
     Database.transaction((transaction: SQLTransaction) => {
       transaction.executeSql(
-        "SELECT * FROM transactions WHERE cardId = ? ORDER BY date DESC",
+        "SELECT * FROM transactions WHERE cardId = ? ORDER BY createdAt DESC",
         [route.params.id],
         (transaction: SQLTransaction, result: SQLResultSet) => {
           setTransactions(result.rows._array);
@@ -58,7 +58,7 @@ const CardScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
           colorId={card?.colorId}
           balance={card?.balance}
           paymentSystem={card?.paymentSystem}
-          date={card?.endDate}
+          endDate={card?.endDate}
         />
         <TouchableOpacity onPress={onGoToChangeCardInformationHandler} activeOpacity={AppConstants.ActiveOpacity}>
           <Text style={styles.goChange}>Change a card information</Text>

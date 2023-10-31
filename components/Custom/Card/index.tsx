@@ -11,7 +11,7 @@ interface ICard {
   paymentSystem?: string;
   number?: string;
   balance?: number;
-  date?: string;
+  endDate?: string;
   colorId?: number;
 }
 
@@ -20,7 +20,7 @@ const Card: FunctionComponent<ICard> = ({
   paymentSystem = "Visa",
   balance = 45000,
   number = "0000 0000 0000 0000",
-  date = "08/23",
+  endDate = "08/23",
   colorId = 0,
 }) => {
   return (
@@ -47,11 +47,11 @@ const Card: FunctionComponent<ICard> = ({
               number[number.length - 1]}
           </Text>
           <Text style={[styles.cardInfoText, styles.cardInfoDate]}>
-            {date.slice(3)[0]}
-            {date.slice(3)[1]}
-            {date.slice(3)[2]}
-            {date.slice(3)[5]}
-            {date.slice(3)[6]}
+            {endDate.slice(3)[0]}
+            {endDate.slice(3)[1]}
+            {endDate.slice(3)[2]}
+            {endDate.slice(3)[5]}
+            {endDate.slice(3)[6]}
           </Text>
         </View>
       </LinearGradient>

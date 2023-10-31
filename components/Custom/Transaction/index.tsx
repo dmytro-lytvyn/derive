@@ -37,7 +37,7 @@ const Transaction: FunctionComponent<ITransactionC> = ({ navigation, data = {} }
                 )?.title
               }
             </Text>
-            <Text style={styles.transactionInfoDate}>{toDateFormat(data.date || "")}</Text>
+            <Text style={styles.transactionInfoDate}>{toDateFormat(data.createdAt || "")}</Text>
           </View>
         </View>
         <Text style={styles.transactionText}>
