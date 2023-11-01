@@ -8,102 +8,13 @@ import AppConstants from "styles/constants";
 import Button from "components/UI/Button";
 import Logo from "components/UI/Logo";
 import TopPanel from "components/UI/TopPanel";
-// File System
-import * as FileSystem from 'expo-file-system';
-import { StorageAccessFramework } from 'expo-file-system';
-// Config
-import * as SecureStore from 'expo-secure-store';
-// UUID
-//import * as Crypto from 'expo-crypto';
-import 'react-native-get-random-values';
-import { v4 as uuidv4 } from 'uuid';
+// Custom functions
+import getOrGenerateOriginId from "libs/getOrGenerateOriginId"
+import getSyncPathOrRequestPermissions from "libs/getSyncPathOrRequestPermissions"
+import processSyncFiles from "libs/processSyncFiles"
 
 const StartScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  async function getOrGenerateOriginId(): void {
-    var originId = await SecureStore.getItemAsync('originId');
-    if (!originId) {
-      originId = uuidv4();
-      await SecureStore.setItemAsync('originId', originId);
-    }
-    console.log(`Current originId = ${originId}`);
-  }
-
-  async function requestSyncDirectoryPermissions(uri: String): void {
-    // If we have no permissions, request them
-    const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync(uri);
-    if (permissions.granted) {
-      const uri = permissions.directoryUri;
-      // Save chosen URI path
-      await SecureStore.setItemAsync('syncDirectory', uri);
-      console.log(`Current syncDirectory = ${uri}`);
-    } else {
-      console.log('Permission not granted!');
-      await requestSyncDirectoryPermissions(uri);
-    };
-  }
-
-  async function getSyncPathOrRequestPermissions(): String {
-    // Get saved path
-    var uri = await SecureStore.getItemAsync('syncDirectory');
-    if (!uri) {
-      // Check if we have permissions to the path
-      var files = await StorageAccessFramework.readDirectoryAsync(uri)
-          .catch((error) => {
-            console.log(error);
-            requestSyncDirectoryPermissions(uri);
-          });
-    } else {
-      console.log(`Current syncDirectory = ${uri}`);
-    }
-    return uri;
-  }
-
-  async function processSyncFiles(): void {
-    // Get saved path
-    var uri = await getSyncPathOrRequestPermissions();
-    var files = await StorageAccessFramework.readDirectoryAsync(uri);
-    files.sort();
-
-    var originId = await SecureStore.getItemAsync('originId');
-    var originOffsets: { [key: string]: string; } = {};
-    var originOffsetsString = await SecureStore.getItemAsync('originOffsets');
-    console.log(`originOffsets: ${originOffsetsString}`);
-    if (originOffsetsString) originOffsets = JSON.parse(originOffsetsString);
-
-    var filesNew = [];
-    for (file of files) {
-      if (file.endsWith('.sql') && !file.endsWith(`${originId}.sql`)) {
-        var fileName = file.substr(file.lastIndexOf('%2F') + 3).replace('.sql', '');
-        var fileParts = fileName.split('%2B');
-        //console.log(`fileParts: ${JSON.stringify(fileParts)}`);
-        var fileUpdatedAt = fileParts[0];
-        var fileEntityType = fileParts[1];
-        var fileEntityId = fileParts[2];
-        var fileOriginId = fileParts[3];
-        var fileOffset = `${fileOriginId}+${fileEntityType}`;
-        if (!(fileOffset in originOffsets) || (originOffsets[fileOffset] < fileUpdatedAt)) {
-          console.log(`fileOffset "${fileOffset}" is not known or latest fileUpdatedAt is older than ${fileUpdatedAt} - will process this sync file!`);
-          filesNew.push(file);
-          originOffsets[fileOffset] = fileUpdatedAt;
-          console.log(`Saving last fileUpdatedAt for fileOffset "${fileOffset}" as ${fileUpdatedAt}...`);
-          await SecureStore.setItemAsync('originOffsets', JSON.stringify(originOffsets));
-        } else {
-          //console.log(`fileOffset "${fileOffset}" is already known and latest fileUpdatedAt is same or newer than ${fileUpdatedAt} - skipping this sync file!`);
-        }
-      }
-    }
-    console.log(`Found ${filesNew.length} new file(s) to process`);
-    for (file of filesNew) {
-      console.log(`Processing sync file: ${file}`);
-      const fileSql = await FileSystem.readAsStringAsync(file, {encoding: FileSystem.EncodingType.UTF8});
-      console.log(fileSql);
-      Database.transaction((transaction: SQLTransaction) => {
-        transaction.executeSql(fileSql,[]);
-      });
-    }
-  }
 
   function onLetsStartPressHandler(): void {
     getSyncPathOrRequestPermissions();
