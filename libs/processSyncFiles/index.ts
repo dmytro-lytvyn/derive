@@ -1,3 +1,6 @@
+import Database from "sql";
+// Custom functions
+import getSyncPathOrRequestPermissions from "libs/getSyncPathOrRequestPermissions"
 // Config
 import * as SecureStore from 'expo-secure-store';
 // File System

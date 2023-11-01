@@ -16,53 +16,63 @@ import processSyncFiles from "libs/processSyncFiles"
 const StartScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  function onLetsStartPressHandler(): void {
-    getSyncPathOrRequestPermissions();
-    navigation.push("AddCard");
+  async function onLetsStartPressHandler(): void {
+    await getSyncPathOrRequestPermissions().then(() => navigation.push("AddCard"));
   }
 
   useEffect(() => {
-    getOrGenerateOriginId();
+    getOrGenerateOriginId(); // Make sure we have originId generated
 
     Database.transaction((transaction: SQLTransaction) => {
       initializeTables(transaction);
     });
 
-    processSyncFiles();
-
-    Database.transaction((transaction: SQLTransaction) => {
-      transaction.executeSql(
-        "SELECT * FROM cards",
-        [],
-        (transaction: SQLTransaction, result: SQLResultSet) => {
-          if (result.rows.length) {
-            navigation.push("Home");
-          } else {
-            setIsLoading(false);
+    async function doSync() {
+      await processSyncFiles();
+    }
+    doSync().then(() => {
+      Database.transaction((transaction: SQLTransaction) => {
+        transaction.executeSql(
+          "SELECT * FROM cards",
+          [],
+          (transaction: SQLTransaction, result: SQLResultSet) => {
+            if (result.rows.length) {
+              navigation.push("Home");
+            } else {
+              setIsLoading(false);
+            }
           }
-        }
-      );
-    });
-  }, []);
+        );
+      });
+    }, []);
+  });
 
   return (
     <TheLayout>
-      {!isLoading && (
-        <View style={styles.body}>
-          <TopPanel />
-          <View>
-            <Logo variant="big" />
-            <Text style={styles.bodyText}>
-              Dérive is a mobile app for keeping track of your expenses and income, managing your financial goals, and
-              keeping track of your card balances.
-            </Text>
-            <View style={styles.bodyButton}>
-              <Button onPressHandler={onLetsStartPressHandler}>Let’s start</Button>
+      <View style={styles.body}>
+        <TopPanel />
+        <View>
+          <Logo variant="big" />
+          {isLoading && (
+            <View style={styles.body}>
+              <Text style={styles.bodyText}>
+                Please wait, syncing data...
+              </Text>
             </View>
-          </View>
-          <View style={styles.footer} />
+          ) || (
+            <View style={styles.body}>
+              <Text style={styles.bodyText}>
+                Dérive is a mobile app for keeping track of your expenses and income, managing your financial goals, and
+                keeping track of your card balances.
+              </Text>
+              <View style={styles.bodyButton}>
+                <Button onPressHandler={onLetsStartPressHandler}>Let’s start</Button>
+              </View>
+            </View>
+          )}
         </View>
-      )}
+        <View style={styles.footer} />
+      </View>
     </TheLayout>
   );
 };
