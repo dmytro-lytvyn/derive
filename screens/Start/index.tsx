@@ -17,35 +17,61 @@ const StartScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   async function onLetsStartPressHandler(): void {
-    await getSyncPathOrRequestPermissions().then(() => navigation.push("AddCard"));
+    console.log('onLetsStartPressHandler started');
+    // Checking for return values is needed to execute things sequentially
+    if (await getSyncPathOrRequestPermissions()) {
+      console.log(`Finished checking permissions`);
+      setIsLoading(true);
+      console.log('setIsLoading=true');
+
+      if (await processSyncFiles()) {
+        Database.transaction((transaction: SQLTransaction) => {
+          transaction.executeSql(
+            "SELECT * FROM cards",
+            [],
+            (transaction: SQLTransaction, result: SQLResultSet) => {
+              if (result.rows.length) {
+                console.log('Home');
+                navigation.push("Home");
+              } else {
+                console.log('AddCard');
+                navigation.push("AddCard");
+              }
+            }
+          );
+        });
+      }
+    }
   }
 
   useEffect(() => {
+    console.log('useEffect');
+
     getOrGenerateOriginId(); // Make sure we have originId generated
 
     Database.transaction((transaction: SQLTransaction) => {
+      console.log('initializeTables');
       initializeTables(transaction);
     });
 
-    async function doSync() {
-      await processSyncFiles();
-    }
-    doSync().then(() => {
-      Database.transaction((transaction: SQLTransaction) => {
-        transaction.executeSql(
-          "SELECT * FROM cards",
-          [],
-          (transaction: SQLTransaction, result: SQLResultSet) => {
-            if (result.rows.length) {
-              navigation.push("Home");
-            } else {
-              setIsLoading(false);
-            }
+    Database.transaction((transaction: SQLTransaction) => {
+      transaction.executeSql(
+        "SELECT * FROM cards",
+        [],
+        (transaction: SQLTransaction, result: SQLResultSet) => {
+          if (result.rows.length) {
+            console.log('processSyncFiles');
+            processSyncFiles().then(() => {
+              navigation.push("Home")
+            });
+          } else {
+            setIsLoading(false);
+            console.log('setIsLoading=false');
           }
-        );
-      });
-    }, []);
-  });
+        }
+      );
+    });
+  }, []); // Second parameter to useEffect to run only once (array of variables need to change before re-rendering)
 
   return (
     <TheLayout>
@@ -64,6 +90,9 @@ const StartScreen: FunctionComponent<IScreen> = ({ navigation }) => {
               <Text style={styles.bodyText}>
                 Dérive is a mobile app for keeping track of your expenses and income, managing your financial goals, and
                 keeping track of your card balances.
+              </Text>
+              <Text style={styles.bodyText}>
+                On the next step, you will be asked to grant permission to a folder for DB sync files.
               </Text>
               <View style={styles.bodyButton}>
                 <Button onPressHandler={onLetsStartPressHandler}>Let’s start</Button>
