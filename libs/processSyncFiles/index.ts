@@ -25,10 +25,15 @@ async function processSyncFiles(): int {
   files.sort();
 
   var originId = await SecureStore.getItemAsync('originId');
+  // This object holds the last known offsets, we'll compare all files to it
   var originOffsets: { [key: string]: string; } = {};
+  // This object will hold updated offsets, it's separate to ensure we don't skip any new files with the same timestamp/entity
+  var originOffsetsNew: { [key: string]: string; } = {};
   var originOffsetsString = await SecureStore.getItemAsync('originOffsets');
   console.log(`originOffsets: ${originOffsetsString}`);
+  // Both old and new offsets are parsed from string because it's the easiest way to have an unlinked clone of an object
   if (originOffsetsString) originOffsets = JSON.parse(originOffsetsString);
+  if (originOffsetsString) originOffsetsNew = JSON.parse(originOffsetsString);
 
   for (file of files) {
     if (file.endsWith('.sql') && !file.endsWith(`${originId}.sql`)) {
@@ -43,10 +48,10 @@ async function processSyncFiles(): int {
       if (!(fileOffset in originOffsets) || (originOffsets[fileOffset] < fileUpdatedAt)) {
         console.log(`fileOffset "${fileOffset}" is not known or latest fileUpdatedAt is older than ${fileUpdatedAt} - will process this sync file!`);
         if (await processFile(file)) {
-          originOffsets[fileOffset] = fileUpdatedAt;
+          originOffsetsNew[fileOffset] = fileUpdatedAt;
           filesProcessed++;
           console.log(`Saving last fileUpdatedAt for fileOffset "${fileOffset}" as ${fileUpdatedAt}...`);
-          await SecureStore.setItemAsync('originOffsets', JSON.stringify(originOffsets));
+          await SecureStore.setItemAsync('originOffsets', JSON.stringify(originOffsetsNew));
         } else {
           break;
         }
