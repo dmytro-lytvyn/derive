@@ -17,12 +17,11 @@ async function entityIsMissingOrOlder(entityType: String, entityId: String, upda
       [entityId]
     );
     console.log(`3.Selected ${result.rows.length} record(s)!`);
-    if ((result.rows.length) && (result.rows[0].updatedAt > updatedAt)) {
+    if ((result.rows.length > 0) && (result.rows[0].updatedAt > updatedAt)) {
       console.log(`4.Entity ${entityType} with id='${entityId}' already exists and is newer (${result.rows[0].updatedAt}) than the file updatedAt (${updatedAt}), will skip this update!`);
       entityIsMissingOrOlder = false;
     } else {
-      console.log(`4.Entity ${entityType} with id='${entityId}' doesn't exist or is older (${result.rows[0].updatedAt}) than the file updatedAt (${updatedAt}), will process this update!`);
-      
+      console.log(`4.Entity ${entityType} with id='${entityId}' doesn't exist or is older than the file updatedAt (${updatedAt}), will process this update!`);
       entityIsMissingOrOlder = true;
     }
   });
@@ -33,10 +32,9 @@ async function entityIsMissingOrOlder(entityType: String, entityId: String, upda
 async function processFile(file: String): boolean {
   console.log(`Processing sync file: ${file}`);
   const fileSql = await FileSystem.readAsStringAsync(file, {encoding: FileSystem.EncodingType.UTF8});
+  console.log('SQL file contents:');
   console.log(fileSql);
-
-  await db.execute(fileSql);
-
+  if (fileSql.length > 0) await db.execute(fileSql);
   return true;
 }
 
@@ -71,9 +69,7 @@ async function processSyncFiles(isFullLoad: boolean = false): int {
       if (!(fileOffset in originOffsets) || (originOffsets[fileOffset] < fileUpdatedAt)) {
         console.log(`0.fileOffset "${fileOffset}" is not known or latest fileUpdatedAt is older than last seen offset ${fileUpdatedAt} - will process this sync file!`);
 
-        var needsProcessing = await entityIsMissingOrOlder(fileEntityType, fileEntityId, fileUpdatedAt);
-        console.log(`needsProcessing = ${needsProcessing}`);
-        if ((isFullLoad) || (needsProcessing)) {
+        if ((isFullLoad) || (await entityIsMissingOrOlder(fileEntityType, fileEntityId, fileUpdatedAt))) {
           if (await processFile(file)) {
             originOffsetsNew[fileOffset] = fileUpdatedAt;
             filesProcessed++;
