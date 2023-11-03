@@ -19,35 +19,36 @@ const EditCardScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
   const [cardNumber, setCardNumber] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
 
-  function onUpdateCardPressHandler(): void {
-    db.transaction(async connection => {
-      var updatedAt = new Date().getTime();
-      var sqlTemplate = 'UPDATE cards SET number = ?, endDate = ?, paymentSystem = ?, colorId = ?, updatedAt = ? WHERE id = ?;';
-      var valuesArray = [
-        cardNumber,
-        endDate,
-        activePaymentSystem,
-        activeSkin,
-        updatedAt,
-        route.params.id,
-      ];
-      // Update card
-      await connection.execute(
-        sqlTemplate,
-        valuesArray
-      );
-      // Save SQL into file
-      saveTransactionToFile(updatedAt, 'cards', route.params.id, sqlTemplate, valuesArray);
-      console.log('saveTransactionToFile done!');
+  async function onUpdateCardPressHandler(): void {
+    const updatedAt = new Date().getTime();
 
-      navigation.push("Home");
-    });
+    // Update card
+    const sqlTemplate = 'UPDATE cards SET number = ?, endDate = ?, paymentSystem = ?, colorId = ?, updatedAt = ? WHERE id = ?;';
+    const valuesArray = [
+      cardNumber,
+      endDate,
+      activePaymentSystem,
+      activeSkin,
+      updatedAt,
+      route.params.id,
+    ];
+
+    await db.execute(
+      sqlTemplate,
+      valuesArray
+    );
+
+    // Save SQL into file
+    await saveTransactionToFile(updatedAt, 'cards', route.params.id, sqlTemplate, valuesArray);
+    console.log('saveTransactionToFile done!');
+
+    navigation.push("Home");
   }
 
-  function onRemoveCardPressHandler(): void {
-    db.transaction(async connection => {
-      var updatedAt = new Date().getTime();
-      var valuesArray = [route.params.id];
+  async function onRemoveCardPressHandler(): void {
+    await db.transaction(async connection => {
+      const updatedAt = new Date().getTime();
+      const valuesArray = [route.params.id];
 
       var sqlTemplate = 'DELETE FROM transactions WHERE cardId = ?;';
       // Delete transactions
@@ -56,7 +57,7 @@ const EditCardScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
         valuesArray
       );
       // Save SQL into file
-      saveTransactionToFile(updatedAt, 'transactions', route.params.id, sqlTemplate, valuesArray);
+      await saveTransactionToFile(updatedAt, 'transactions', route.params.id, sqlTemplate, valuesArray);
       console.log('Delete transactions done!');
 
       sqlTemplate = 'DELETE FROM cards WHERE id = ?;';
@@ -66,28 +67,31 @@ const EditCardScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
         valuesArray
       );
       // Save SQL into file
-      saveTransactionToFile(updatedAt, 'cards', route.params.id, sqlTemplate, valuesArray);
+      await saveTransactionToFile(updatedAt, 'cards', route.params.id, sqlTemplate, valuesArray);
       console.log('Delete card done!');
-
-      var result = await connection.execute("SELECT * FROM cards");
-      if (result.rows.length) {
-        navigation.push("Home");
-      } else {
-        navigation.push("Start");
-      }
     });
+
+    const result = await db.execute("SELECT * FROM cards");
+    if (result.rows.length) {
+      navigation.push("Home");
+    } else {
+      navigation.push("Start");
+    }
   }
 
   useEffect(() => {
     db.transaction(async connection => {
-      var result = await connection.execute(
+      const result = await connection.execute(
         "SELECT * FROM cards WHERE id = ?",
         [route.params.id]
       );
-      setActiveSkin(Number(result.rows[0].colorId));
-      setActivePaymentSystem(result.rows[0].paymentSystem);
-      setCardNumber(String(result.rows[0].number));
-      setEndDate(result.rows[0].endDate.replace("/", "").replace("/", ""));
+
+      if (result.rows.length > 0) {
+        setActiveSkin(Number(result.rows[0].colorId));
+        setActivePaymentSystem(result.rows[0].paymentSystem);
+        setCardNumber(String(result.rows[0].number));
+        setEndDate(result.rows[0].endDate.replace("/", "").replace("/", ""));
+      }
     });
   }, []);
 

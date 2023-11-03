@@ -24,25 +24,23 @@ const AddCardScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   const [cardNumber, setCardNumber] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
 
-  function onCreateCardPressHandler(): void {
-    db.transaction(async connection => {
-      var id = uuidv4();
-      var updatedAt = new Date().getTime();
-      var sqlTemplate = 'INSERT INTO cards (id, createdAt, updatedAt, balance, paymentSystem, number, endDate, colorId) VALUES (?, ?, ?, ?, ?, ?, ?, ?);';
-      var valuesArray = [id, updatedAt, updatedAt, Number(initialSum), paymentSystem, cardNumber, endDate, skinID];
+  async function onCreateCardPressHandler(): void {
+    const id = uuidv4();
+    const updatedAt = new Date().getTime();
+    const sqlTemplate = 'INSERT INTO cards (id, createdAt, updatedAt, balance, paymentSystem, number, endDate, colorId) VALUES (?, ?, ?, ?, ?, ?, ?, ?);';
+    const valuesArray = [id, updatedAt, updatedAt, Number(initialSum), paymentSystem, cardNumber, endDate, skinID];
 
-      // Insert a new card
-      await connection.execute(
-        sqlTemplate,
-        valuesArray
-      );
+    // Insert a new card
+    await db.execute(
+      sqlTemplate,
+      valuesArray
+    );
 
-      // Save SQL into file
-      saveTransactionToFile(updatedAt, 'cards', id, sqlTemplate, valuesArray);
-      console.log('saveTransactionToFile done!');
+    // Save SQL into file
+    await saveTransactionToFile(updatedAt, 'cards', id, sqlTemplate, valuesArray);
+    console.log('saveTransactionToFile done!');
 
-      navigation.push("Home");
-    });
+    navigation.push("Home");
   }
 
   function validateData(): boolean {

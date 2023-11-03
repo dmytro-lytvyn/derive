@@ -25,7 +25,8 @@ const TransferScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
 
   useEffect(() => {
     db.transaction(async connection => {
-      var result = await connection.execute(
+      // Get a list of other cards to transfer to
+      const result = await connection.execute(
         "SELECT * FROM cards WHERE id != ?",
         [route.params.cardId]
       );
@@ -41,11 +42,11 @@ const TransferScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
     return false;
   }
 
-  function onTransferConfirmHandler(): void {
-    var updatedAt = new Date().getTime();
-    var sqlTemplate = 'UPDATE cards SET balance = balance + ?, updatedAt = ? WHERE id = ?;';
+  async function onTransferConfirmHandler(): void {
+    const updatedAt = new Date().getTime();
+    const sqlTemplate = 'UPDATE cards SET balance = balance + ?, updatedAt = ? WHERE id = ?;';
 
-    db.transaction(async connection => {
+    await db.transaction(async connection => {
       // From card
       var valuesArray = [-1 * Number(sum), updatedAt, route.params.cardId];
 
@@ -54,8 +55,9 @@ const TransferScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
         valuesArray
       );
       console.log('Update card 1 done!');
+
       // Save SQL into file
-      saveTransactionToFile(updatedAt, 'cards', String(route.params.cardId), sqlTemplate, valuesArray);
+      await saveTransactionToFile(updatedAt, 'cards', String(route.params.cardId), sqlTemplate, valuesArray);
       console.log('saveTransactionToFile 1 done!');
 
       // To card
@@ -66,13 +68,14 @@ const TransferScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
         valuesArray
       );
       console.log('Update card 2 done!');
-      // Save SQL into file
-      saveTransactionToFile(updatedAt, 'cards', String(selectedCard?.id), sqlTemplate, valuesArray);
-      console.log('saveTransactionToFile 2 done!');
 
-      navigation.push("Card", {
-        id: route.params.cardId,
-      });
+      // Save SQL into file
+      await saveTransactionToFile(updatedAt, 'cards', String(selectedCard?.id), sqlTemplate, valuesArray);
+      console.log('saveTransactionToFile 2 done!');
+    });
+
+    navigation.push("Card", {
+      id: route.params.cardId,
     });
   }
 

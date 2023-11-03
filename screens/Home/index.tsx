@@ -23,7 +23,7 @@ const HomeScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
 
   useEffect(() => {
     db.transaction(async connection => {
-      var result = await connection.execute(
+      const result = await connection.execute(
         "SELECT * FROM cards ORDER BY endDate DESC",
       );
 
@@ -31,7 +31,7 @@ const HomeScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
     });
 
     db.transaction(async connection => {
-      var result = await connection.execute(
+      const result = await connection.execute(
         "SELECT * FROM goals ORDER BY name"
       );
 
@@ -39,7 +39,7 @@ const HomeScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
     });
 
     db.transaction(async connection => {
-      var result = await connection.execute(
+      const result = await connection.execute(
         "SELECT * FROM transactions ORDER BY createdAt DESC LIMIT 5"
       );
 

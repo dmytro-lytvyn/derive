@@ -17,14 +17,16 @@ const TransactionScreen: FunctionComponent<IScreen> = ({ navigation, route }) =>
 
   useEffect(() => {
     db.transaction(async connection => {
-      await connection.execute(
+      // Get the current transaction record
+      var result = await connection.execute(
         "SELECT * FROM transactions WHERE id = ?",
         [route.params.id]
       );
 
       setCurrentTransaction(result.rows[0]);
 
-      await connection.execute(
+      // Show last 5 transactions of the same type
+      result = await connection.execute(
         "SELECT * FROM transactions WHERE type = ? AND id != ? ORDER BY createdAt DESC LIMIT 5",
             [result.rows[0].type, result.rows[0].id]
       );

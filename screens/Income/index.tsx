@@ -20,39 +20,40 @@ const IncomeScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
   const [sum, setSum] = useState<number>(0);
   const [incomeTypeID, setIncomeTypeID] = useState<number>(returnConfigurationData().IncomeTypes[0].id);
 
-  function onCreateTransactionPressHandler(): void {
-    db.transaction(async connection => {
-      var id = uuidv4();
-      var updatedAt = new Date().getTime();
+  async function onCreateTransactionPressHandler(): void {
+    await db.transaction(async connection => {
+      const id = uuidv4();
+      const updatedAt = new Date().getTime();
+
+      // Insert a new transaction
       var sqlTemplate = 'INSERT INTO transactions (id, createdAt, updatedAt, cardId, amount, type, actionType) VALUES (?, ?, ?, ?, ?, ?, ?);';
       var valuesArray = [id, updatedAt, updatedAt, route.params.cardId, Number(sum), incomeTypeID, "income"];
 
-      // Insert a new transaction
       await connection.execute(
         sqlTemplate,
         valuesArray
       );
 
       // Save SQL into file
-      saveTransactionToFile(updatedAt, 'transactions', id, sqlTemplate, valuesArray);
+      await saveTransactionToFile(updatedAt, 'transactions', id, sqlTemplate, valuesArray);
       console.log('Insert a new transaction done!');
 
+      // Update card balance
       sqlTemplate = 'UPDATE cards SET balance = balance + ?, updatedAt = ? WHERE id = ?;';
       valuesArray = [Number(sum), updatedAt, route.params.cardId];
 
-      // Update card balance
       await connection.execute(
         sqlTemplate,
         valuesArray
       );
 
       // Save SQL into file
-      saveTransactionToFile(updatedAt, 'cards', route.params.cardId, sqlTemplate, valuesArray);
+      await saveTransactionToFile(updatedAt, 'cards', route.params.cardId, sqlTemplate, valuesArray);
       console.log('Update card balance done!');
+    });
 
-      navigation.push("Card", {
-        id: route.params.cardId,
-      });
+    navigation.push("Card", {
+      id: route.params.cardId,
     });
   }
 

@@ -24,49 +24,55 @@ const GoalScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
         "SELECT * FROM goals WHERE id = ?",
         [route.params.id]
       );
+
       setGoal(result.rows[0]);
       setLeftAmount(result.rows[0].finalAmount - result.rows[0].currentAmount);
     });
   }, [navigation]);
 
-  function onUpdateGoalPressHandler(): void {
-    const currentAmount = goal?.currentAmount || 0;
-    const newAmount = currentAmount + Number(amountToAdd) + -Number(amountToWithdraw);
-    const completeAmount = newAmount >= 0 ? newAmount : 0;
+  async function onUpdateGoalPressHandler(): void {
+    await db.transaction(async connection => {
+      const currentAmount = goal?.currentAmount || 0;
+      const newAmount = currentAmount + Number(amountToAdd) + -Number(amountToWithdraw);
+      const completeAmount = newAmount >= 0 ? newAmount : 0;
+      const updatedAt = new Date().getTime();
 
-    db.transaction(async connection => {
-      var updatedAt = new Date().getTime();
-      var sqlTemplate = 'UPDATE goals SET currentAmount = ?, updatedAt = ? WHERE id = ?;';
-      var valuesArray = [completeAmount, updatedAt, route.params.id];
       // Update goal
+      const sqlTemplate = 'UPDATE goals SET currentAmount = ?, updatedAt = ? WHERE id = ?;';
+      const valuesArray = [completeAmount, updatedAt, route.params.id];
+
       await connection.execute(
         sqlTemplate,
         valuesArray
       );
-      // Save SQL into file
-      saveTransactionToFile(updatedAt, 'goals', route.params.id, sqlTemplate, valuesArray);
-      console.log('saveTransactionToFile done!');
 
-      navigation.push("Home");
+      // Save SQL into file
+      await saveTransactionToFile(updatedAt, 'goals', route.params.id, sqlTemplate, valuesArray);
+      console.log('saveTransactionToFile done!');
     });
+
+    navigation.push("Home");
   }
 
-  function onRemoveGoalPressHandler(): void {
-    db.transaction(async connection => {
-      var updatedAt = new Date().getTime();
-      var sqlTemplate = 'DELETE FROM goals WHERE id = ?;';
-      var valuesArray = [route.params.id];
+  async function onRemoveGoalPressHandler(): void {
+    await db.transaction(async connection => {
+      const updatedAt = new Date().getTime();
+
       // Update goal
+      const sqlTemplate = 'DELETE FROM goals WHERE id = ?;';
+      const valuesArray = [route.params.id];
+
       await connection.execute(
         sqlTemplate,
         valuesArray
       );
-      // Save SQL into file
-      saveTransactionToFile(updatedAt, 'goals', route.params.id, sqlTemplate, valuesArray);
-      console.log('saveTransactionToFile done!');
 
-      navigation.push("Home");
+      // Save SQL into file
+      await saveTransactionToFile(updatedAt, 'goals', route.params.id, sqlTemplate, valuesArray);
+      console.log('saveTransactionToFile done!');
     });
+
+    navigation.push("Home");
   }
 
   return (

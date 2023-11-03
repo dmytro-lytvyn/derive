@@ -38,16 +38,17 @@ const StartScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   }
 
   useEffect(() => {
-    console.log('useEffect');
+    async function initStartScreen() {
+      console.log('useEffect');
 
-    getOrGenerateOriginId(); // Make sure we have originId generated
+      await getOrGenerateOriginId(); // Make sure we have originId generated
 
-    console.log('initializeTables');
-    initializeTables();
+      console.log('initializeTables');
+      await initializeTables();
 
-    db.transaction(async connection => {
-      const result = await connection.execute("SELECT * FROM cards");
+      const result = await db.execute("SELECT * FROM cards");
       console.log(result.rows);
+
       if (result.rows.length) {
         console.log('processSyncFiles');
         processSyncFiles(isFullLoad = false).then(() => {
@@ -57,7 +58,9 @@ const StartScreen: FunctionComponent<IScreen> = ({ navigation }) => {
         setIsLoading(false);
         console.log('setIsLoading=false');
       }
-    });
+    }
+
+    initStartScreen();
 
   }, []); // Second parameter to useEffect to run only once (array of variables need to change before re-rendering)
 

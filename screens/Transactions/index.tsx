@@ -12,7 +12,7 @@ const TransactionsScreen: FunctionComponent<IScreen> = ({ navigation }) => {
 
   useEffect(() => {
     db.transaction(async connection => {
-      var result = await connection.execute(
+      const result = await connection.execute(
         sqlTemplate,
         valuesArray
       );

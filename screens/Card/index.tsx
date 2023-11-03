@@ -25,7 +25,7 @@ const CardScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
 
   useEffect(() => {
     db.transaction(async connection => {
-      var result = await connection.execute(
+      const result = await connection.execute(
         "SELECT * FROM cards WHERE id = ?",
         [route.params.id]
       );
@@ -34,7 +34,7 @@ const CardScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
     });
 
     db.transaction(async connection => {
-      var result = await connection.execute(
+      const result = await connection.execute(
         "SELECT * FROM transactions WHERE cardId = ? ORDER BY createdAt DESC",
         [route.params.id]
       );
@@ -43,7 +43,7 @@ const CardScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
     });
 
     db.transaction(async connection => {
-      var result = await connection.execute(
+      const result = await connection.execute(
         "SELECT * FROM cards"
       );
 

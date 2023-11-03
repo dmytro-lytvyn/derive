@@ -20,25 +20,23 @@ const AddGoalScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   const [goalFinalAmount, setGoalFinalAmount] = useState<number>(0);
   const [goalDescription, setGoalDescription] = useState<string>("");
 
-  function onAddGoalPressHandler(): void {
-    db.transaction(async connection => {
-      var id = uuidv4();
-      var updatedAt = new Date().getTime();
-      var sqlTemplate = 'INSERT INTO goals (id, createdAt, updatedAt, name, description, finalAmount, currentAmount) VALUES (?, ?, ?, ?, ?, ?, ?);';
-      var valuesArray = [id, updatedAt, updatedAt, goalName, goalDescription, Number(goalFinalAmount), 0];
+  async function onAddGoalPressHandler(): void {
+    const id = uuidv4();
+    const updatedAt = new Date().getTime();
+    const sqlTemplate = 'INSERT INTO goals (id, createdAt, updatedAt, name, description, finalAmount, currentAmount) VALUES (?, ?, ?, ?, ?, ?, ?);';
+    const valuesArray = [id, updatedAt, updatedAt, goalName, goalDescription, Number(goalFinalAmount), 0];
 
-      // Insert a new goal
-      await connection.execute(
-        sqlTemplate,
-        valuesArray
-      );
+    // Insert a new goal
+    await db.execute(
+      sqlTemplate,
+      valuesArray
+    );
 
-      // Save SQL into file
-      saveTransactionToFile(updatedAt, 'goals', id, sqlTemplate, valuesArray);
-      console.log('saveTransactionToFile done!');
+    // Save SQL into file
+    await saveTransactionToFile(updatedAt, 'goals', id, sqlTemplate, valuesArray);
+    console.log('saveTransactionToFile done!');
 
-      navigation.push("Home");
-    });
+    navigation.push("Home");
   }
 
   function validateData(): boolean {

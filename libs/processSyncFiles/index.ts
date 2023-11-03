@@ -10,21 +10,22 @@ import { StorageAccessFramework } from 'expo-file-system';
 async function entityIsMissingOrOlder(entityType: String, entityId: String, updatedAt: Number): boolean {
   console.log('1.Starting entityIsMissingOrOlder...');
   var entityIsMissingOrOlder: boolean;
-  await db.transaction(async connection => {
-    console.log(`2.SELECT updatedAt FROM ${entityType}`);
-    var result = await connection.execute(
-      `SELECT updatedAt FROM ${entityType} WHERE id = ?`,
-      [entityId]
-    );
-    console.log(`3.Selected ${result.rows.length} record(s)!`);
-    if ((result.rows.length > 0) && (result.rows[0].updatedAt > updatedAt)) {
-      console.log(`4.Entity ${entityType} with id='${entityId}' already exists and is newer (${result.rows[0].updatedAt}) than the file updatedAt (${updatedAt}), will skip this update!`);
-      entityIsMissingOrOlder = false;
-    } else {
-      console.log(`4.Entity ${entityType} with id='${entityId}' doesn't exist or is older than the file updatedAt (${updatedAt}), will process this update!`);
-      entityIsMissingOrOlder = true;
-    }
-  });
+
+  console.log(`2.SELECT updatedAt FROM ${entityType}`);
+  var result = await db.execute(
+    `SELECT updatedAt FROM ${entityType} WHERE id = ?`,
+    [entityId]
+  );
+  console.log(`3.Selected ${result.rows.length} record(s)!`);
+
+  if ((result.rows.length > 0) && (result.rows[0].updatedAt > updatedAt)) {
+    console.log(`4.Entity ${entityType} with id='${entityId}' already exists and is newer (${result.rows[0].updatedAt}) than the file updatedAt (${updatedAt}), will skip this update!`);
+    entityIsMissingOrOlder = false;
+  } else {
+    console.log(`4.Entity ${entityType} with id='${entityId}' doesn't exist or is older than the file updatedAt (${updatedAt}), will process this update!`);
+    entityIsMissingOrOlder = true;
+  }
+
   console.log(`5.Returning ${entityIsMissingOrOlder}`);
   return entityIsMissingOrOlder;
 }
