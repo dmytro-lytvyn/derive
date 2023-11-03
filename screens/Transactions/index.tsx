@@ -13,8 +13,7 @@ const TransactionsScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   useEffect(() => {
     db.transaction(async connection => {
       const result = await connection.execute(
-        sqlTemplate,
-        valuesArray
+        "SELECT * FROM transactions ORDER BY createdAt DESC"
       );
 
       setTransactions(result.rows);

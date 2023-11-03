@@ -28,7 +28,7 @@ const TransactionScreen: FunctionComponent<IScreen> = ({ navigation, route }) =>
       // Show last 5 transactions of the same type
       result = await connection.execute(
         "SELECT * FROM transactions WHERE type = ? AND id != ? ORDER BY createdAt DESC LIMIT 5",
-            [result.rows[0].type, result.rows[0].id]
+        [result.rows[0].type, result.rows[0].id]
       );
 
       setTransactions(result.rows);
