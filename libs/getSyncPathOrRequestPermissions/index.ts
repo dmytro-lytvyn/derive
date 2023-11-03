@@ -18,7 +18,6 @@ async function requestSyncDirectoryPermissions(uri: String): string {
       SecureStore.setItemAsync('syncDirectory', uri);
     } else {
       console.log('Permission not granted!');
-      //await requestSyncDirectoryPermissions(uri);
       uri = undefined;
     };
   }

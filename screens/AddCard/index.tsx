@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import Database from "sql";
+import db from "sql";
 import { SQLTransaction } from "expo-sqlite";
 import TheLayout from "layouts";
 import AppConstants from "styles/constants";
@@ -25,21 +25,24 @@ const AddCardScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   const [endDate, setEndDate] = useState<string>("");
 
   function onCreateCardPressHandler(): void {
-    Database.transaction((transaction: SQLTransaction) => {
+    db.transaction(async connection => {
       var id = uuidv4();
       var updatedAt = new Date().getTime();
       var sqlTemplate = 'INSERT INTO cards (id, createdAt, updatedAt, balance, paymentSystem, number, endDate, colorId) VALUES (?, ?, ?, ?, ?, ?, ?, ?);';
       var valuesArray = [id, updatedAt, updatedAt, Number(initialSum), paymentSystem, cardNumber, endDate, skinID];
+
       // Insert a new card
-      transaction.executeSql(
+      await connection.execute(
         sqlTemplate,
         valuesArray
       );
+
       // Save SQL into file
       saveTransactionToFile(updatedAt, 'cards', id, sqlTemplate, valuesArray);
       console.log('saveTransactionToFile done!');
+
+      navigation.push("Home");
     });
-    navigation.push("Home");
   }
 
   function validateData(): boolean {

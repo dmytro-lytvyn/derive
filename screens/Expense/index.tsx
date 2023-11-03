@@ -1,7 +1,7 @@
 import React, { FunctionComponent, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import TheLayout from "layouts";
-import Database from "sql";
+import db from "sql";
 import { SQLResultSet, SQLTransaction } from "expo-sqlite";
 import returnConfigurationData from "libs/config";
 import ExpenseType from "components/Custom/ExpenseType";
@@ -21,35 +21,38 @@ const ExpenseScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
   const [expenseTypeID, setExpenseTypeID] = useState<number>(returnConfigurationData().ExpenseTypes[0].id);
 
   function onCreateTransactionPressHandler(): void {
-    Database.transaction((transaction: SQLTransaction) => {
+    db.transaction(async connection => {
       var id = uuidv4();
       var updatedAt = new Date().getTime();
       var sqlTemplate = 'INSERT INTO transactions (id, createdAt, updatedAt, cardId, amount, type, actionType) VALUES (?, ?, ?, ?, ?, ?, ?);';
       var valuesArray = [id, updatedAt, updatedAt, route.params.cardId, Number(sum), expenseTypeID, "expense"];
+
       // Insert a new transaction
-      transaction.executeSql(
+      await connection.execute(
         sqlTemplate,
         valuesArray
       );
+
       // Save SQL into file
       saveTransactionToFile(updatedAt, 'transactions', id, sqlTemplate, valuesArray);
       console.log('Insert a new transaction done!');
 
       sqlTemplate = 'UPDATE cards SET balance = balance - ?, updatedAt = ? WHERE id = ?;';
       valuesArray = [Number(sum), updatedAt, route.params.cardId];
+
       // Update card balance
-      transaction.executeSql(
+      await connection.execute(
         sqlTemplate,
-        valuesArray,
-        () => {
-          navigation.push("Card", {
-            id: route.params.cardId,
-          });
-        }
+        valuesArray
       );
+
       // Save SQL into file
       saveTransactionToFile(updatedAt, 'cards', route.params.cardId, sqlTemplate, valuesArray);
       console.log('Update card balance done!');
+
+      navigation.push("Card", {
+        id: route.params.cardId,
+      });
     });
   }
 

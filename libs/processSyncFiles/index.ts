@@ -1,4 +1,4 @@
-import Database from "sql";
+import db from "sql";
 // Custom functions
 import getSyncPathOrRequestPermissions from "libs/getSyncPathOrRequestPermissions"
 // Config
@@ -7,17 +7,40 @@ import * as SecureStore from 'expo-secure-store';
 import * as FileSystem from 'expo-file-system';
 import { StorageAccessFramework } from 'expo-file-system';
 
+async function entityIsMissingOrOlder(entityType: String, entityId: String, updatedAt: Number): boolean {
+  console.log('1.Starting entityIsMissingOrOlder...');
+  var entityIsMissingOrOlder: boolean;
+  await db.transaction(async connection => {
+    console.log(`2.SELECT updatedAt FROM ${entityType}`);
+    var result = await connection.execute(
+      `SELECT updatedAt FROM ${entityType} WHERE id = ?`,
+      [entityId]
+    );
+    console.log(`3.Selected ${result.rows.length} record(s)!`);
+    if ((result.rows.length) && (result.rows[0].updatedAt > updatedAt)) {
+      console.log(`4.Entity ${entityType} with id='${entityId}' already exists and is newer (${result.rows[0].updatedAt}) than the file updatedAt (${updatedAt}), will skip this update!`);
+      entityIsMissingOrOlder = false;
+    } else {
+      console.log(`4.Entity ${entityType} with id='${entityId}' doesn't exist or is older (${result.rows[0].updatedAt}) than the file updatedAt (${updatedAt}), will process this update!`);
+      
+      entityIsMissingOrOlder = true;
+    }
+  });
+  console.log(`5.Returning ${entityIsMissingOrOlder}`);
+  return entityIsMissingOrOlder;
+}
+
 async function processFile(file: String): boolean {
   console.log(`Processing sync file: ${file}`);
   const fileSql = await FileSystem.readAsStringAsync(file, {encoding: FileSystem.EncodingType.UTF8});
   console.log(fileSql);
-  Database.transaction((transaction: SQLTransaction) => {
-    transaction.executeSql(fileSql,[]);
-  });
+
+  await db.execute(fileSql);
+
   return true;
 }
 
-async function processSyncFiles(): int {
+async function processSyncFiles(isFullLoad: boolean = false): int {
   // Get saved path
   var filesProcessed = 0;
   var uri = await getSyncPathOrRequestPermissions();
@@ -40,23 +63,31 @@ async function processSyncFiles(): int {
       var fileName = file.substr(file.lastIndexOf('%2F') + 3).replace('.sql', '');
       var fileParts = fileName.split('%2B');
       //console.log(`fileParts: ${JSON.stringify(fileParts)}`);
-      var fileUpdatedAt = fileParts[0];
+      var fileUpdatedAt = Number(fileParts[0]);
       var fileEntityType = fileParts[1];
       var fileEntityId = fileParts[2];
       var fileOriginId = fileParts[3];
       var fileOffset = `${fileOriginId}+${fileEntityType}`;
       if (!(fileOffset in originOffsets) || (originOffsets[fileOffset] < fileUpdatedAt)) {
-        console.log(`fileOffset "${fileOffset}" is not known or latest fileUpdatedAt is older than ${fileUpdatedAt} - will process this sync file!`);
-        if (await processFile(file)) {
-          originOffsetsNew[fileOffset] = fileUpdatedAt;
-          filesProcessed++;
-          console.log(`Saving last fileUpdatedAt for fileOffset "${fileOffset}" as ${fileUpdatedAt}...`);
-          await SecureStore.setItemAsync('originOffsets', JSON.stringify(originOffsetsNew));
-        } else {
-          break;
+        console.log(`0.fileOffset "${fileOffset}" is not known or latest fileUpdatedAt is older than last seen offset ${fileUpdatedAt} - will process this sync file!`);
+
+        var needsProcessing = await entityIsMissingOrOlder(fileEntityType, fileEntityId, fileUpdatedAt);
+        console.log(`needsProcessing = ${needsProcessing}`);
+        if ((isFullLoad) || (needsProcessing)) {
+          if (await processFile(file)) {
+            originOffsetsNew[fileOffset] = fileUpdatedAt;
+            filesProcessed++;
+            console.log(`Saving last fileUpdatedAt for fileOffset "${fileOffset}" as ${fileUpdatedAt}...`);
+            await SecureStore.setItemAsync('originOffsets', JSON.stringify(originOffsetsNew));
+          } else {
+            break;
+          }
+          // Save the offset for any new file
+          //console.log(`Saving last fileUpdatedAt for fileOffset "${fileOffset}" as ${fileUpdatedAt}...`);
+          //await SecureStore.setItemAsync('originOffsets', JSON.stringify(originOffsetsNew));
         }
       } else {
-        //console.log(`fileOffset "${fileOffset}" is already known and latest fileUpdatedAt is same or newer than ${fileUpdatedAt} - skipping this sync file!`);
+        //console.log(`fileOffset "${fileOffset}" is already known and latest fileUpdatedAt is same or newer than last seen offset ${fileUpdatedAt} - skipping this sync file!`);
       }
     }
   }

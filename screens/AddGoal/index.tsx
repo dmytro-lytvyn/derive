@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import Database from "sql";
+import db from "sql";
 import { SQLTransaction } from "expo-sqlite";
 import TheLayout from "layouts";
 import TopPanel from "components/UI/TopPanel";
@@ -21,22 +21,23 @@ const AddGoalScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   const [goalDescription, setGoalDescription] = useState<string>("");
 
   function onAddGoalPressHandler(): void {
-    Database.transaction((transaction: SQLTransaction) => {
+    db.transaction(async connection => {
       var id = uuidv4();
       var updatedAt = new Date().getTime();
       var sqlTemplate = 'INSERT INTO goals (id, createdAt, updatedAt, name, description, finalAmount, currentAmount) VALUES (?, ?, ?, ?, ?, ?, ?);';
       var valuesArray = [id, updatedAt, updatedAt, goalName, goalDescription, Number(goalFinalAmount), 0];
+
       // Insert a new goal
-      transaction.executeSql(
+      await connection.execute(
         sqlTemplate,
-        valuesArray,
-        () => {
-          navigation.push("Home");
-        }
+        valuesArray
       );
+
       // Save SQL into file
       saveTransactionToFile(updatedAt, 'goals', id, sqlTemplate, valuesArray);
       console.log('saveTransactionToFile done!');
+
+      navigation.push("Home");
     });
   }
 

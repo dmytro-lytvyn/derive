@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useEffect, useState } from "react";
 import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
-import Database from "sql";
+import db from "sql";
 import { SQLResultSet, SQLTransaction } from "expo-sqlite";
 import TheLayout from "layouts";
 import AppConstants from "styles/constants";
@@ -24,14 +24,13 @@ const TransferScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
   }
 
   useEffect(() => {
-    Database.transaction((transaction: SQLTransaction) => {
-      transaction.executeSql(
+    db.transaction(async connection => {
+      var result = await connection.execute(
         "SELECT * FROM cards WHERE id != ?",
-        [route.params.cardId],
-        (transaction: SQLTransaction, result: SQLResultSet) => {
-          setCards(result.rows._array);
-        }
+        [route.params.cardId]
       );
+
+      setCards(result.rows);
     });
   }, []);
 
@@ -46,11 +45,11 @@ const TransferScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
     var updatedAt = new Date().getTime();
     var sqlTemplate = 'UPDATE cards SET balance = balance + ?, updatedAt = ? WHERE id = ?;';
 
-    Database.transaction((transaction: SQLTransaction) => {
+    db.transaction(async connection => {
       // From card
       var valuesArray = [-1 * Number(sum), updatedAt, route.params.cardId];
 
-      transaction.executeSql(
+      await connection.execute(
         sqlTemplate,
         valuesArray
       );
@@ -62,19 +61,18 @@ const TransferScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
       // To card
       valuesArray = [Number(sum), updatedAt, selectedCard?.id];
 
-      transaction.executeSql(
+      await connection.execute(
         sqlTemplate,
-        valuesArray,
-        () => {
-          navigation.push("Card", {
-            id: route.params.cardId,
-          });
-        }
+        valuesArray
       );
       console.log('Update card 2 done!');
       // Save SQL into file
       saveTransactionToFile(updatedAt, 'cards', String(selectedCard?.id), sqlTemplate, valuesArray);
       console.log('saveTransactionToFile 2 done!');
+
+      navigation.push("Card", {
+        id: route.params.cardId,
+      });
     });
   }
 

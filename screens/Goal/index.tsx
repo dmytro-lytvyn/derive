@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useEffect, useState } from "react";
 import { StyleSheet, View, Text } from "react-native";
-import Database from "sql";
+import db from "sql";
 import { SQLResultSet, SQLTransaction } from "expo-sqlite";
 import toPriceFormat from "libs/toPriceFormat";
 import TheLayout from "layouts";
@@ -19,15 +19,13 @@ const GoalScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
   const [amountToWithdraw, setAmountToWithdraw] = useState<string>("");
 
   useEffect(() => {
-    Database.transaction((transaction: SQLTransaction) => {
-      transaction.executeSql(
+    db.transaction(async connection => {
+      const result = await connection.execute(
         "SELECT * FROM goals WHERE id = ?",
-        [route.params.id],
-        (transaction: SQLTransaction, result: SQLResultSet) => {
-          setGoal(result.rows._array[0]);
-          setLeftAmount(result.rows._array[0].finalAmount - result.rows._array[0].currentAmount);
-        }
+        [route.params.id]
       );
+      setGoal(result.rows[0]);
+      setLeftAmount(result.rows[0].finalAmount - result.rows[0].currentAmount);
     });
   }, [navigation]);
 
@@ -35,40 +33,39 @@ const GoalScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
     const currentAmount = goal?.currentAmount || 0;
     const newAmount = currentAmount + Number(amountToAdd) + -Number(amountToWithdraw);
     const completeAmount = newAmount >= 0 ? newAmount : 0;
-    Database.transaction((transaction: SQLTransaction) => {
+
+    db.transaction(async connection => {
       var updatedAt = new Date().getTime();
       var sqlTemplate = 'UPDATE goals SET currentAmount = ?, updatedAt = ? WHERE id = ?;';
       var valuesArray = [completeAmount, updatedAt, route.params.id];
       // Update goal
-      transaction.executeSql(
+      await connection.execute(
         sqlTemplate,
-        valuesArray,
-        () => {
-          navigation.push("Home");
-        }
+        valuesArray
       );
       // Save SQL into file
       saveTransactionToFile(updatedAt, 'goals', route.params.id, sqlTemplate, valuesArray);
       console.log('saveTransactionToFile done!');
+
+      navigation.push("Home");
     });
   }
 
   function onRemoveGoalPressHandler(): void {
-    Database.transaction((transaction: SQLTransaction) => {
+    db.transaction(async connection => {
       var updatedAt = new Date().getTime();
       var sqlTemplate = 'DELETE FROM goals WHERE id = ?;';
       var valuesArray = [route.params.id];
-      // Delete goal
-      transaction.executeSql(
+      // Update goal
+      await connection.execute(
         sqlTemplate,
-        valuesArray,
-        () => {
-          navigation.push("Home");
-        }
+        valuesArray
       );
       // Save SQL into file
       saveTransactionToFile(updatedAt, 'goals', route.params.id, sqlTemplate, valuesArray);
       console.log('saveTransactionToFile done!');
+
+      navigation.push("Home");
     });
   }
 

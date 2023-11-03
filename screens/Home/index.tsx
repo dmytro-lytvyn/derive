@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, View, Text, Pressable } from "react-native";
-import Database from "sql";
+import db from "sql";
 import { SQLResultSet, SQLTransaction } from "expo-sqlite";
 import TheLayout from "layouts";
 import AppConstants from "styles/constants";
@@ -22,32 +22,28 @@ const HomeScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
   }
 
   useEffect(() => {
-    Database.transaction((transaction: SQLTransaction) => {
-      transaction.executeSql(
+    db.transaction(async connection => {
+      var result = await connection.execute(
         "SELECT * FROM cards ORDER BY endDate DESC",
-        [],
-        (transaction: SQLTransaction, result: SQLResultSet) => {
-          setCards(result.rows._array);
-        }
       );
+
+      setCards(result.rows);
     });
-    Database.transaction((transaction: SQLTransaction) => {
-      transaction.executeSql(
-        "SELECT * FROM goals ORDER BY name",
-        [],
-        (transaction: SQLTransaction, result: SQLResultSet) => {
-          setGoals(result.rows._array);
-        }
+
+    db.transaction(async connection => {
+      var result = await connection.execute(
+        "SELECT * FROM goals ORDER BY name"
       );
+
+      setGoals(result.rows);
     });
-    Database.transaction((transaction: SQLTransaction) => {
-      transaction.executeSql(
-        "SELECT * FROM transactions ORDER BY createdAt DESC LIMIT 5",
-        [],
-        (transaction: SQLTransaction, result: SQLResultSet) => {
-          setTransactions(result.rows._array);
-        }
+
+    db.transaction(async connection => {
+      var result = await connection.execute(
+        "SELECT * FROM transactions ORDER BY createdAt DESC LIMIT 5"
       );
+
+      setTransactions(result.rows);
     });
   }, [route]);
 

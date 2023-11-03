@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useEffect, useState } from "react";
 import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
-import Database from "sql";
+import db from "sql";
 import { SQLResultSet, SQLTransaction } from "expo-sqlite";
 import AppConstants from "styles/constants";
 import TheLayout from "layouts";
@@ -24,28 +24,30 @@ const CardScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
   }
 
   useEffect(() => {
-    Database.transaction((transaction: SQLTransaction) => {
-      transaction.executeSql(
+    db.transaction(async connection => {
+      var result = await connection.execute(
         "SELECT * FROM cards WHERE id = ?",
-        [route.params.id],
-        (transaction: SQLTransaction, result: SQLResultSet) => {
-          setCard(result.rows._array[0]);
-        }
+        [route.params.id]
       );
+
+      setCard(result.rows[0]);
     });
-    Database.transaction((transaction: SQLTransaction) => {
-      transaction.executeSql(
+
+    db.transaction(async connection => {
+      var result = await connection.execute(
         "SELECT * FROM transactions WHERE cardId = ? ORDER BY createdAt DESC",
-        [route.params.id],
-        (transaction: SQLTransaction, result: SQLResultSet) => {
-          setTransactions(result.rows._array);
-        }
+        [route.params.id]
       );
+
+      setTransactions(result.rows);
     });
-    Database.transaction((transaction: SQLTransaction) => {
-      transaction.executeSql("SELECT * FROM cards WHERE 1", [], (transaction: SQLTransaction, result: SQLResultSet) => {
-        setCardsLength(result.rows._array.length);
-      });
+
+    db.transaction(async connection => {
+      var result = await connection.execute(
+        "SELECT * FROM cards"
+      );
+
+      setCardsLength(result.rows.length);
     });
   }, []);
 

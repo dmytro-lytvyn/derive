@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import Database from "sql";
+import db from "sql";
 import { SQLResultSet, SQLTransaction } from "expo-sqlite";
 import TheLayout from "layouts";
 import AppConstants from "styles/constants";
@@ -20,7 +20,7 @@ const EditCardScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
   const [endDate, setEndDate] = useState<string>("");
 
   function onUpdateCardPressHandler(): void {
-    Database.transaction((transaction: SQLTransaction) => {
+    db.transaction(async connection => {
       var updatedAt = new Date().getTime();
       var sqlTemplate = 'UPDATE cards SET number = ?, endDate = ?, paymentSystem = ?, colorId = ?, updatedAt = ? WHERE id = ?;';
       var valuesArray = [
@@ -32,25 +32,26 @@ const EditCardScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
         route.params.id,
       ];
       // Update card
-      transaction.executeSql(
+      await connection.execute(
         sqlTemplate,
         valuesArray
       );
       // Save SQL into file
       saveTransactionToFile(updatedAt, 'cards', route.params.id, sqlTemplate, valuesArray);
       console.log('saveTransactionToFile done!');
+
+      navigation.push("Home");
     });
-    navigation.push("Home");
   }
 
   function onRemoveCardPressHandler(): void {
-    Database.transaction((transaction: SQLTransaction) => {
+    db.transaction(async connection => {
       var updatedAt = new Date().getTime();
       var valuesArray = [route.params.id];
 
       var sqlTemplate = 'DELETE FROM transactions WHERE cardId = ?;';
       // Delete transactions
-      transaction.executeSql(
+      await connection.execute(
         sqlTemplate,
         valuesArray
       );
@@ -58,9 +59,9 @@ const EditCardScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
       saveTransactionToFile(updatedAt, 'transactions', route.params.id, sqlTemplate, valuesArray);
       console.log('Delete transactions done!');
 
-      var sqlTemplate = 'DELETE FROM cards WHERE id = ?;';
+      sqlTemplate = 'DELETE FROM cards WHERE id = ?;';
       // Delete card
-      transaction.executeSql(
+      await connection.execute(
         sqlTemplate,
         valuesArray
       );
@@ -68,31 +69,25 @@ const EditCardScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
       saveTransactionToFile(updatedAt, 'cards', route.params.id, sqlTemplate, valuesArray);
       console.log('Delete card done!');
 
-      transaction.executeSql(
-        "SELECT * FROM cards",
-        [],
-        (t: SQLTransaction, result: SQLResultSet) => {
-          if (result.rows.length) {
-            navigation.push("Home");
-          } else {
-            navigation.push("Start");
-          }
-        });
+      var result = await connection.execute("SELECT * FROM cards");
+      if (result.rows.length) {
+        navigation.push("Home");
+      } else {
+        navigation.push("Start");
+      }
     });
   }
 
   useEffect(() => {
-    Database.transaction((transaction: SQLTransaction) => {
-      transaction.executeSql(
+    db.transaction(async connection => {
+      var result = await connection.execute(
         "SELECT * FROM cards WHERE id = ?",
-        [route.params.id],
-        (transaction: SQLTransaction, result: SQLResultSet) => {
-          setActiveSkin(Number(result.rows._array[0].colorId));
-          setActivePaymentSystem(result.rows._array[0].paymentSystem);
-          setCardNumber(String(result.rows._array[0].number));
-          setEndDate(result.rows._array[0].endDate.replace("/", "").replace("/", ""));
-        }
+        [route.params.id]
       );
+      setActiveSkin(Number(result.rows[0].colorId));
+      setActivePaymentSystem(result.rows[0].paymentSystem);
+      setCardNumber(String(result.rows[0].number));
+      setEndDate(result.rows[0].endDate.replace("/", "").replace("/", ""));
     });
   }, []);
 

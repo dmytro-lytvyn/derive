@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import Database from "sql";
+import db from "sql";
 import initializeTables from "sql/initializeTables";
 import { SQLResultSet, SQLTransaction } from "expo-sqlite";
 import TheLayout from "layouts";
@@ -24,22 +24,15 @@ const StartScreen: FunctionComponent<IScreen> = ({ navigation }) => {
       setIsLoading(true);
       console.log('setIsLoading=true');
 
-      if (await processSyncFiles()) {
-        Database.transaction((transaction: SQLTransaction) => {
-          transaction.executeSql(
-            "SELECT * FROM cards",
-            [],
-            (transaction: SQLTransaction, result: SQLResultSet) => {
-              if (result.rows.length) {
-                console.log('Home');
-                navigation.push("Home");
-              } else {
-                console.log('AddCard');
-                navigation.push("AddCard");
-              }
-            }
-          );
-        });
+      if (await processSyncFiles(isFullLoad = true)) {
+        const result = await db.execute("SELECT * FROM cards");
+        if (result.rows.length) {
+          console.log('Home');
+          navigation.push("Home");
+        } else {
+          console.log('AddCard');
+          navigation.push("AddCard");
+        }
       }
     }
   }
@@ -49,28 +42,23 @@ const StartScreen: FunctionComponent<IScreen> = ({ navigation }) => {
 
     getOrGenerateOriginId(); // Make sure we have originId generated
 
-    Database.transaction((transaction: SQLTransaction) => {
-      console.log('initializeTables');
-      initializeTables(transaction);
+    console.log('initializeTables');
+    initializeTables();
+
+    db.transaction(async connection => {
+      const result = await connection.execute("SELECT * FROM cards");
+      console.log(result.rows);
+      if (result.rows.length) {
+        console.log('processSyncFiles');
+        processSyncFiles(isFullLoad = false).then(() => {
+          navigation.push("Home")
+        });
+      } else {
+        setIsLoading(false);
+        console.log('setIsLoading=false');
+      }
     });
 
-    Database.transaction((transaction: SQLTransaction) => {
-      transaction.executeSql(
-        "SELECT * FROM cards",
-        [],
-        (transaction: SQLTransaction, result: SQLResultSet) => {
-          if (result.rows.length) {
-            console.log('processSyncFiles');
-            processSyncFiles().then(() => {
-              navigation.push("Home")
-            });
-          } else {
-            setIsLoading(false);
-            console.log('setIsLoading=false');
-          }
-        }
-      );
-    });
   }, []); // Second parameter to useEffect to run only once (array of variables need to change before re-rendering)
 
   return (

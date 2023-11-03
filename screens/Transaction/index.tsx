@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useEffect, useState } from "react";
 import { Image, StyleSheet, Text, View } from "react-native";
-import Database from "sql";
+import db from "sql";
 import { SQLResultSet, SQLTransaction } from "expo-sqlite";
 import returnConfigurationData from "libs/config";
 import toPriceFormat from "libs/toPriceFormat";
@@ -16,21 +16,20 @@ const TransactionScreen: FunctionComponent<IScreen> = ({ navigation, route }) =>
   const [transactions, setTransactions] = useState<ITransaction[]>();
 
   useEffect(() => {
-    Database.transaction((transaction: SQLTransaction) => {
-      transaction.executeSql(
+    db.transaction(async connection => {
+      await connection.execute(
         "SELECT * FROM transactions WHERE id = ?",
-        [route.params.id],
-        (_: SQLTransaction, result: SQLResultSet) => {
-          setCurrentTransaction(result.rows._array[0]);
-          transaction.executeSql(
-            "SELECT * FROM transactions WHERE type = ? AND id != ? ORDER BY createdAt DESC LIMIT 5",
-            [result.rows._array[0].type, result.rows._array[0].id],
-            (transaction: SQLTransaction, result: SQLResultSet) => {
-              setTransactions(result.rows._array);
-            }
-          );
-        }
+        [route.params.id]
       );
+
+      setCurrentTransaction(result.rows[0]);
+
+      await connection.execute(
+        "SELECT * FROM transactions WHERE type = ? AND id != ? ORDER BY createdAt DESC LIMIT 5",
+            [result.rows[0].type, result.rows[0].id]
+      );
+
+      setTransactions(result.rows);
     });
   }, [route]);
 

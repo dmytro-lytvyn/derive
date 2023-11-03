@@ -1,7 +1,7 @@
 import React, { FunctionComponent, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import TheLayout from "layouts";
-import Database from "sql";
+import db from "sql";
 import { SQLResultSet, SQLTransaction } from "expo-sqlite";
 import Transaction from "components/Custom/Transaction";
 import TopPanel from "components/UI/TopPanel";
@@ -11,14 +11,13 @@ const TransactionsScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   const [transactions, setTransactions] = useState<ITransaction[]>([]);
 
   useEffect(() => {
-    Database.transaction((transaction: SQLTransaction) => {
-      transaction.executeSql(
-        "SELECT * FROM transactions ORDER BY createdAt DESC",
-        [],
-        (transaction: SQLTransaction, result: SQLResultSet) => {
-          setTransactions(result.rows._array);
-        }
+    db.transaction(async connection => {
+      var result = await connection.execute(
+        sqlTemplate,
+        valuesArray
       );
+
+      setTransactions(result.rows);
     });
   }, []);
 
