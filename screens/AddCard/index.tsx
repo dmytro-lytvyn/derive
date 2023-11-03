@@ -37,7 +37,7 @@ const AddCardScreen: FunctionComponent<IScreen> = ({ navigation }) => {
     );
 
     // Save SQL into file
-    await saveTransactionToFile(updatedAt, 'cards', id, sqlTemplate, valuesArray);
+    saveTransactionToFile(updatedAt, 'cards', id, sqlTemplate, valuesArray);
     console.log('saveTransactionToFile done!');
 
     navigation.push("Home");

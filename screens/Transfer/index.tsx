@@ -57,7 +57,7 @@ const TransferScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
       console.log('Update card 1 done!');
 
       // Save SQL into file
-      await saveTransactionToFile(updatedAt, 'cards', String(route.params.cardId), sqlTemplate, valuesArray);
+      saveTransactionToFile(updatedAt, 'cards', String(route.params.cardId), sqlTemplate, valuesArray);
       console.log('saveTransactionToFile 1 done!');
 
       // To card
@@ -70,7 +70,7 @@ const TransferScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
       console.log('Update card 2 done!');
 
       // Save SQL into file
-      await saveTransactionToFile(updatedAt, 'cards', String(selectedCard?.id), sqlTemplate, valuesArray);
+      saveTransactionToFile(updatedAt, 'cards', String(selectedCard?.id), sqlTemplate, valuesArray);
       console.log('saveTransactionToFile 2 done!');
     });
 

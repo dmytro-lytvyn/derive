@@ -47,7 +47,7 @@ const GoalScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
       );
 
       // Save SQL into file
-      await saveTransactionToFile(updatedAt, 'goals', route.params.id, sqlTemplate, valuesArray);
+      saveTransactionToFile(updatedAt, 'goals', route.params.id, sqlTemplate, valuesArray);
       console.log('saveTransactionToFile done!');
     });
 
@@ -68,7 +68,7 @@ const GoalScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
       );
 
       // Save SQL into file
-      await saveTransactionToFile(updatedAt, 'goals', route.params.id, sqlTemplate, valuesArray);
+      saveTransactionToFile(updatedAt, 'goals', route.params.id, sqlTemplate, valuesArray);
       console.log('saveTransactionToFile done!');
     });
 

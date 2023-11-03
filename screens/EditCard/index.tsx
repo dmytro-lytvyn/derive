@@ -39,7 +39,7 @@ const EditCardScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
     );
 
     // Save SQL into file
-    await saveTransactionToFile(updatedAt, 'cards', route.params.id, sqlTemplate, valuesArray);
+    saveTransactionToFile(updatedAt, 'cards', route.params.id, sqlTemplate, valuesArray);
     console.log('saveTransactionToFile done!');
 
     navigation.push("Home");
@@ -57,7 +57,7 @@ const EditCardScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
         valuesArray
       );
       // Save SQL into file
-      await saveTransactionToFile(updatedAt, 'transactions', route.params.id, sqlTemplate, valuesArray);
+      saveTransactionToFile(updatedAt, 'transactions', route.params.id, sqlTemplate, valuesArray);
       console.log('Delete transactions done!');
 
       sqlTemplate = 'DELETE FROM cards WHERE id = ?;';
@@ -67,7 +67,7 @@ const EditCardScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
         valuesArray
       );
       // Save SQL into file
-      await saveTransactionToFile(updatedAt, 'cards', route.params.id, sqlTemplate, valuesArray);
+      saveTransactionToFile(updatedAt, 'cards', route.params.id, sqlTemplate, valuesArray);
       console.log('Delete card done!');
     });
 

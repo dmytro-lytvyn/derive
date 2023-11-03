@@ -35,7 +35,7 @@ const IncomeScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
       );
 
       // Save SQL into file
-      await saveTransactionToFile(updatedAt, 'transactions', id, sqlTemplate, valuesArray);
+      saveTransactionToFile(updatedAt, 'transactions', id, sqlTemplate, valuesArray);
       console.log('Insert a new transaction done!');
 
       // Update card balance
@@ -48,7 +48,7 @@ const IncomeScreen: FunctionComponent<IScreen> = ({ navigation, route }) => {
       );
 
       // Save SQL into file
-      await saveTransactionToFile(updatedAt, 'cards', route.params.cardId, sqlTemplate, valuesArray);
+      saveTransactionToFile(updatedAt, 'cards', route.params.cardId, sqlTemplate, valuesArray);
       console.log('Update card balance done!');
     });
 

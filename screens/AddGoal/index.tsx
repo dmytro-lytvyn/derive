@@ -33,7 +33,7 @@ const AddGoalScreen: FunctionComponent<IScreen> = ({ navigation }) => {
     );
 
     // Save SQL into file
-    await saveTransactionToFile(updatedAt, 'goals', id, sqlTemplate, valuesArray);
+    saveTransactionToFile(updatedAt, 'goals', id, sqlTemplate, valuesArray);
     console.log('saveTransactionToFile done!');
 
     navigation.push("Home");
