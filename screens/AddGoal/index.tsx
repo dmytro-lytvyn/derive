@@ -17,7 +17,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const AddGoalScreen: FunctionComponent<IScreen> = ({ navigation }) => {
   const [goalName, setGoalName] = useState<string>("");
-  const [goalFinalAmount, setGoalFinalAmount] = useState<number>(0);
+  const [goalFinalAmount, setGoalFinalAmount] = useState<string>(0);
   const [goalDescription, setGoalDescription] = useState<string>("");
 
   async function onAddGoalPressHandler(): void {
