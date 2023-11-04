@@ -1,14 +1,8 @@
 {
   "build": {
     "preview": {
-      "android": {
-        "buildType": "apk"
-      }
+      "developmentClient": true
     },
-    "production": {
-      "android": {
-        "buildType": "apk"
-      }
-    }
+    "production": {}
   }
 }
