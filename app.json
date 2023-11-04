@@ -34,8 +34,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "9b2b44ac-6471-4b1a-b9bc-2f362c051f7c"
+        "projectId": "cfdd9599-8040-41b2-802b-614eb2bcc7a9"
       }
-    }
+    },
+    "owner": "dmytro_lytvyn"
   }
 }
